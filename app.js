@@ -101,7 +101,7 @@ function renderPractice() {
 }
 
 function startPractice(diagnostic=false,focus='',length=8) {
-  practiceSession={diagnostic,focus,length:diagnostic?8:length,index:0,answers:[],seed:Date.now()+questionCounter++,current:null,hints:0,graded:false,reason:''};
+  practiceSession={diagnostic,focus,length:diagnostic?8:length,index:0,answers:[],seed:Date.now()+questionCounter++,current:null,hints:0,graded:false,reason:'',seenPrompts:[]};
   prepareQuestion();
   if(location.hash==='#practice') renderPractice(); else location.hash='practice';
 }
@@ -111,7 +111,13 @@ function prepareQuestion() {
   if(!session || session.index>=session.length) return;
   const order=['division','percent_decimal','percent_part','percent_rate','percent_whole','ratios','unit_rate','percent_change'];
   const next=session.diagnostic?{skill:order[session.index],level:1,format:session.index%3===1?'choice':'numeric',reason:'A starting check. Take your time and show your thinking on paper.'}:selectNext(progress,{focus:session.focus||undefined,seed:session.seed+session.index});
-  session.current=makeQuestion(next.skill,next.level,`${session.seed}-${session.index}-${questionCounter++}`,next.format);
+    let candidate;
+  for(let attempt=0;attempt<1000;attempt++) {
+    candidate=makeQuestion(next.skill,next.level,`${session.seed}-${session.index}-${questionCounter++}`,next.format);
+    if(!session.seenPrompts.includes(candidate.prompt)) break;
+  }
+  session.current=candidate;
+  session.seenPrompts.push(candidate.prompt);
   session.reason=next.reason;session.hints=0;session.graded=false;session.raw='';
 }
 
@@ -194,7 +200,16 @@ function renderPrint() {
 
 function generateSheet() {
   const skill=$('#sheet-skill').value,level=Number($('#sheet-level').value),count=Number($('#sheet-count').value);
-  worksheetQuestions=Array.from({length:count},(_,i)=>makeQuestion(skill==='mixed'?SKILLS[i%SKILLS.length].id:skill,level,`${sheetSeed}-${i}`,i%3===0?'choice':'numeric'));
+  const seen=new Set();
+  worksheetQuestions=Array.from({length:count},(_,i)=>{
+    let candidate;
+    for(let attempt=0;attempt<1000;attempt++) {
+      candidate=makeQuestion(skill==='mixed'?SKILLS[i%SKILLS.length].id:skill,level,`${sheetSeed}-${i}-${attempt}`,i%3===0?'choice':'numeric');
+      if(!seen.has(candidate.prompt)) break;
+    }
+    seen.add(candidate.prompt);
+    return candidate;
+  });
   paintSheet();
 }
 

@@ -10,11 +10,11 @@ Volume 1: **Ratios, Rates & Percentages**. Student content is in English, with o
 - Student book: [Grade-7-Math-Student-Workbook.pdf](downloads/Grade-7-Math-Student-Workbook.pdf)
 - Answer guide: [Grade-7-Math-Answer-Guide.pdf](downloads/Grade-7-Math-Answer-Guide.pdf)
 
-The website contains ten short lessons, a pool explorer, one-question-at-a-time adaptive practice, fresh printable sheets, and a parent progress view. Select **家长中文** to reveal Chinese guidance for parents. This is not a full Chinese translation of the student book.
+The website opens directly to a concise percentage lesson. Each page shows one idea, one worked example, and a **Practice this idea** button. The **Learn / Practice** navigation keeps online work prominent. A compact lesson menu holds all ten chapters; full explanations and the pool model expand on request. **Progress / Print / Parents** are secondary footer tools. Select **家长中文** on the Parents page to reveal Chinese parent notes. The full printed edition remains available under Print.
 
 ### A useful first session
 
-1. Open the pool explorer. Identify what represents 100%.
+1. Open the book's percentage lesson. Identify what represents 100%. Expand **Try the pool model** if a moving picture helps.
 2. Compare three questions using the same quantities: 25% of 800 L; 200 L out of 800 L; and 200 L as 25% of an unknown capacity.
 3. Read the worked example for the quantity that is confusing.
 4. Complete an eight-question starting check or a focused practice session.
@@ -89,7 +89,8 @@ The builder uses the fixed `book-v1` seeds and the same dataset for the student 
 
 | File | Purpose |
 |---|---|
-| `content.js` | Lessons, examples, parent guidance, references, and roadmap |
+| `content.js` | Full lessons, parent guidance, references, and roadmap |
+| `quick-lessons.js` | Concise student-facing lesson summaries and worked examples |
 | `engine.js` | Deterministic question factories, numeric grading, adaptive rules |
 | `engine.test.mjs` | Arithmetic and behavior checks |
 | `app.js` | Book navigation, explorer, practice interface, printing, progress |

@@ -12,25 +12,13 @@
 <body>
   <a class="skip-link" href="#main">Skip to learning content</a>
   <header class="topbar">
-    <a class="brand" href="#learn"><span class="brand-mark" aria-hidden="true">%</span><span>Math Lab<small>GRADE 7 · BOOK 1</small></span></a>
+    <a class="brand" href="#learn">Grade 7 Math</a>
     <nav class="main-nav" aria-label="Main navigation">
       <a href="#learn" data-tab="learn">Learn</a>
       <a href="#practice" data-tab="practice">Practice</a>
-      <a href="#print" data-tab="print">Workbook</a>
-      <a href="#progress" data-tab="progress">My progress</a>
-      <a href="#parents" data-tab="parents">For parents</a>
     </nav>
-    <button class="text-button parent-language" id="parent-language" type="button" aria-pressed="false">家长中文</button>
   </header>
   <div class="shell">
-    <aside class="sidebar" id="sidebar">
-      <p class="eyebrow">THE LEARNING PATH</p>
-      <h2>Ratios, rates<br>& percentages</h2>
-      <p class="side-intro">Understand it. Try it.<br>Make it your own.</p>
-      <nav id="lesson-nav" aria-label="Book lessons"></nav>
-      <div class="side-note"><strong>A little, often.</strong><br>Try one lesson and one short practice session. You can always pause.</div>
-      <a class="source-link" href="#parents">Curriculum & sources</a>
-    </aside>
     <main id="main" tabindex="-1">
       <div id="storage-warning" class="notice" role="status" hidden>Your browser cannot save progress right now. You can still practice and export your results before leaving.</div>
       <section id="learn-view" class="view"></section>
@@ -38,7 +26,14 @@
       <section id="print-view" class="view" hidden></section>
       <section id="progress-view" class="view" hidden></section>
       <section id="parents-view" class="view" hidden></section>
-      <footer class="page-footer">Original lessons & practice · Michigan standards alignment · First edition, November 2026<br><span>Practice progress stays in this browser. No student account required.</span></footer>
+      <footer class="page-footer">
+        <nav class="footer-links" aria-label="More options">
+          <a href="#progress" data-tab="progress">Progress</a>
+          <a href="#print" data-tab="print">Print</a>
+          <a href="#parents" data-tab="parents">Parents</a>
+          <button class="text-button parent-language" id="parent-language" type="button" aria-pressed="false" hidden>家长中文</button>
+        </nav>
+      </footer>
     </main>
   </div>
   <noscript><p class="notice">Enable JavaScript for the interactive book, or download the <a href="downloads/Grade-7-Math-Student-Workbook.pdf">student workbook</a> and <a href="downloads/Grade-7-Math-Answer-Guide.pdf">answer guide</a>.</p></noscript>

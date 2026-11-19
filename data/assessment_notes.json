@@ -1,0 +1,149 @@
+{
+  "diagnostic": [
+    {
+      "skill": "division",
+      "prompt": "You have 24 liters of water. Each container holds 6 liters. How many full containers can you fill?",
+      "answer": "4 containers",
+      "why": "24 divided by 6 = 4. Each group contains 6 liters, so the quotient counts the groups. Check: 4 times 6 = 24."
+    },
+    {
+      "skill": "percent_decimal",
+      "prompt": "Write 35% as a decimal.",
+      "answer": "0.35",
+      "why": "Percent means per hundred. 35% = 35/100 = 0.35."
+    },
+    {
+      "skill": "find_part",
+      "prompt": "A pool holds 800 liters when full. It is 25% full. How many liters of water are in the pool?",
+      "answer": "200 liters",
+      "why": "The full capacity, 800 liters, is the whole. 25% = 1/4, so 800 divided by 4 = 200. Equivalently, 0.25 times 800 = 200."
+    },
+    {
+      "skill": "find_percent",
+      "prompt": "A pool holds 800 liters when full. It currently contains 200 liters. What percentage of its full capacity is filled?",
+      "answer": "25%",
+      "why": "Compare the part with the whole: 200/800 = 0.25 = 25%. Dividing 800 by 200 reverses the comparison."
+    },
+    {
+      "skill": "find_whole",
+      "prompt": "A pool contains 200 liters of water. This is 25% of its full capacity. How many liters does the pool hold when full?",
+      "answer": "800 liters",
+      "why": "25% is one fourth. Four equal parts of 200 liters make the whole: 4 times 200 = 800. Equivalently, 200 divided by 0.25 = 800."
+    },
+    {
+      "skill": "ratios",
+      "prompt": "A box has red and blue tiles in the ratio red:blue = 2:3. There are 25 tiles in all. How many tiles are red?",
+      "answer": "10 red tiles",
+      "why": "There are 2 + 3 = 5 equal ratio parts. Each part is 25 divided by 5 = 5 tiles. Red uses 2 parts, so 2 times 5 = 10."
+    },
+    {
+      "skill": "unit_rate",
+      "prompt": "Six identical markers cost $15 in total. What is the cost per marker?",
+      "answer": "$2.50 per marker",
+      "why": "Divide total dollars by the number of markers: 15 divided by 6 = 2.50 dollars per marker. Check: 6 times $2.50 = $15."
+    },
+    {
+      "skill": "percent_change",
+      "prompt": "A model kit's price increases from $80 to $100. What is the percent increase?",
+      "answer": "25%",
+      "why": "The increase is $100 - $80 = $20. Compare it with the original $80: 20/80 = 0.25 = 25%."
+    }
+  ],
+  "explainQuestions": [
+    {
+      "skill": "find_part",
+      "prompt": "A pool's full capacity is 800 liters. It is 25% full. Maya says there are 200 liters; Leo says there are 3,200 liters. Who is correct? Draw a bar split into four equal parts and explain.",
+      "answer": "Maya is correct. The whole bar represents 800 liters, so each of four equal parts represents 200 liters. A quarter of the capacity is 200 liters. 800 divided by 0.25 would answer a different question: 800 is a quarter of what whole?"
+    },
+    {
+      "skill": "find_percent",
+      "prompt": "A pool contains 200 liters out of an 800-liter capacity. A student writes 800 divided by 200 = 4, so the pool is 4% full. Explain the mistake and show the correct comparison.",
+      "answer": "The numerator should be the filled part, and the denominator should be the full capacity. 200/800 = 1/4 = 0.25 = 25%. The value 800/200 = 4 tells how many 200-liter parts fit into the whole; it is not the fraction filled."
+    },
+    {
+      "skill": "find_whole",
+      "prompt": "A pool contains 200 liters, which is 25% of its capacity. A student multiplies 200 by 0.25 and gets 50 liters for the capacity. Explain why 50 cannot be correct, and find the actual capacity.",
+      "answer": "The full capacity must be larger than the 200 liters already in the pool. The 200 liters represent one quarter, so the whole has four such parts: 4 times 200 = 800 liters. Equivalently, 0.25 times capacity = 200, so capacity = 200/0.25 = 800."
+    },
+    {
+      "skill": "find_part",
+      "prompt": "An 800-liter pool is 25% full. How many more liters are needed to fill it? Explain why the answer is not 200 liters.",
+      "answer": "There are already 0.25 times 800 = 200 liters in the pool. The unfilled part is 100% - 25% = 75%, which is 600 liters. Adding 600 liters to the existing 200 reaches the 800-liter capacity."
+    },
+    {
+      "skill": "percent_decimal",
+      "prompt": "A student writes 25% = 0.25%, saying that the decimal point only changes how the number looks. Explain the difference between 25%, 0.25, and 0.25%.",
+      "answer": "25% and 0.25 represent the same value because 25/100 = 0.25. But 0.25% means 0.25/100 = 0.0025. Keeping the percent sign after dividing by 100 divides by 100 a second time."
+    },
+    {
+      "skill": "unit_rate",
+      "prompt": "Six markers cost $15. Erin computes 6 divided by 15 = 0.4 and calls the result dollars per marker. What does 0.4 actually measure? Find the cost per marker.",
+      "answer": "6 markers divided by 15 dollars gives 0.4 markers per dollar. Dollars per marker requires the reverse division: 15 dollars divided by 6 markers = $2.50 per marker. The units help identify the correct order."
+    },
+    {
+      "skill": "ratios",
+      "prompt": "Red:blue tiles = 2:3. A student says that 2/3 of all the tiles are red. Explain the mistake. What fraction and percentage of all the tiles are red?",
+      "answer": "The ratio compares red tiles with blue tiles, not red tiles with all tiles. There are 2 + 3 = 5 total ratio parts. Red is 2/5 of the total, which is 0.4 = 40%."
+    },
+    {
+      "skill": "percent_change",
+      "prompt": "A jacket's price falls from $80 to $60. Noah calculates 20 divided by 60 and says the discount is about 33.3%. Which amount should be the comparison base? Find the correct percent decrease.",
+      "answer": "The decrease is $20, and the original price of $80 is the comparison base. 20/80 = 0.25 = 25%. Dividing by $60 answers how large the $20 difference is relative to the new price, which is a different comparison."
+    },
+    {
+      "skill": "percent_change",
+      "prompt": "A $100 robot kit is discounted by 20%. The next day, its discounted price increases by 20%. Is the final price $100? Show both steps and explain.",
+      "answer": "No. After the discount, the price is $100 times 0.80 = $80. The increase is 20% of $80, which is $16, so the final price is $96. The decrease and increase use different starting amounts."
+    },
+    {
+      "skill": "division",
+      "prompt": "Sam says, 'Division always makes a number smaller.' Use 12 divided by 3 and 12 divided by 0.5 to check the statement. Explain the second calculation using half-liter bottles.",
+      "answer": "12/3 = 4, but 12/0.5 = 24. Twelve liters fill 24 half-liter bottles. Dividing a positive number by a positive number smaller than 1 gives a larger quotient, so Sam's statement is false."
+    },
+    {
+      "skill": "find_percent",
+      "prompt": "A robot was expected to travel 20 meters but traveled 30 meters. What percentage of the expected distance did it travel? A friend says any percentage above 100% is impossible. Explain whether that is true here.",
+      "answer": "30/20 = 1.5 = 150%. It traveled one and a half times the expected distance. A percentage can exceed 100% when the amount being compared is larger than the reference amount. This does not mean that a pool can contain more than its stated maximum capacity."
+    },
+    {
+      "skill": "find_whole",
+      "prompt": "Compare these questions: A: What is 30% of 90? B: 90 is 30% of what number? Explain why the same numbers lead to different calculations and answers. Include a check for each answer.",
+      "answer": "In A, the whole is 90 and the part is unknown, so the part is 0.30 times 90 = 27; check 27/90 = 30%. In B, the part is 90 and the whole is unknown, so the whole is 90/0.30 = 300; check 0.30 times 300 = 90. Identify what represents 100% before choosing the operation."
+    }
+  ],
+  "designNotes": [
+    "All student prompts and numerical examples in this file are original. The listed sources inform instructional design; no textbook exercise has been copied or translated.",
+    "Use the three linked pool diagnostic questions together to distinguish finding a part, finding a percentage, and finding a whole. Do not infer a specific misconception from one final answer alone; ask the student to identify the whole or choose an equation to confirm.",
+    "Treat the diagnostic as a starting conversation, not a standardized assessment or a grade. A correct response with a hint is recorded as supported success, separately from independent first-attempt success.",
+    "For an incorrect response, identify the relevant step, offer a visual hint or worked example, and then try one or two changed-number questions. Later change the context and mix question types to check transfer.",
+    "Keep short practice sessions finite. When errors repeat, return to the prerequisite concept or invite parent support rather than generating an endless sequence of increasingly frustrating questions.",
+    "Use delayed review as well as immediate repetition. Any exact scheduling interval or mastery threshold in an initial app is a configurable design heuristic, not a validated estimate of ability.",
+    "For pool-capacity examples, clearly distinguish water already present from water still needed. Use full capacity as 100% unless a question explicitly names another reference amount.",
+    "For percentage-change problems, the original value is the denominator. Discount followed by an equal percentage increase does not generally restore the original value because the bases differ.",
+    "For ratio red:blue = a:b, the fraction of the total that is red is a/(a+b). Reserve a/b for the comparison of red to blue.",
+    "Do not teach that all percentages are at most 100%, or that division always reduces a number. Choose examples that expose the conditions under which these statements fail.",
+    "Parent note / 家长提示：先问孩子题目中哪个量代表 100%，再问已知什么、要找什么。理解了数量关系后，再决定乘还是除。不要只根据一次错题判断能力或性格。"
+  ],
+  "sources": [
+    {
+      "title": "IES / What Works Clearinghouse: Improving Mathematical Problem Solving in Grades 4 Through 8",
+      "url": "https://ies.ed.gov/ncee/wwc/PracticeGuide/16/Published"
+    },
+    {
+      "title": "IES: Organizing Instruction and Study to Improve Student Learning",
+      "url": "https://ies.ed.gov/ncee/WWC/Docs/PracticeGuide/20072004.pdf"
+    },
+    {
+      "title": "IES / What Works Clearinghouse: Assisting Students Struggling with Mathematics, Elementary and Middle Schools",
+      "url": "https://ies.ed.gov/ncee/wwc/PracticeGuide/2"
+    },
+    {
+      "title": "People's Education Press: Introduction to the new compulsory-education mathematics textbooks for Grades 1-6",
+      "url": "https://www.pep.com.cn/xw/zt/hd/12/xjcjs/xx/202409/t20240920_1995566.html"
+    },
+    {
+      "title": "People's Education Press Grade 6 Mathematics, upper volume, 2022 edition; reference only, all rights reserved",
+      "url": "https://v3.ykt.cbern.com.cn/65/document/8d58b51c59a7405e8debdfd67c992d0b/pdf.pdf"
+    }
+  ]
+}

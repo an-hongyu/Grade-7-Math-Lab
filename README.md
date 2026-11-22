@@ -12,12 +12,14 @@ The book develops selected Grade 7 skills and supporting foundations/extensions.
 ## Read and use the book
 
 - Website: https://an-hongyu.github.io/Grade-7-Math-Lab/
-- Chapter 2: https://an-hongyu.github.io/Grade-7-Math-Lab/#learn/counting_choices
+- Chapter 1 contents: https://an-hongyu.github.io/Grade-7-Math-Lab/#chapter/ratios
+- Chapter 2 contents: https://an-hongyu.github.io/Grade-7-Math-Lab/#chapter/counting
+- Chapter 2 first lesson: https://an-hongyu.github.io/Grade-7-Math-Lab/#learn/counting_choices
 - Chapter 2 practice: https://an-hongyu.github.io/Grade-7-Math-Lab/#practice/counting
 - Chapter 1 student PDF: [Grade-7-Math-Student-Workbook.pdf](downloads/Grade-7-Math-Student-Workbook.pdf)
 - Chapter 1 answer PDF: [Grade-7-Math-Answer-Guide.pdf](downloads/Grade-7-Math-Answer-Guide.pdf)
 
-The website opens directly to a concise percentage lesson. Each page shows one idea, one worked example, and a **Practice this idea** button. The **Learn / Practice** navigation keeps online work prominent. Compact chapter and lesson menus hold all fifteen lessons; full explanations and the pool model expand on request. **Progress / Print / Parents** are secondary footer tools. Select **家长中文** on the Parents page to reveal Chinese parent notes. Chapter 1 PDFs and fresh printable sheets for either chapter are available under Print.
+The root URL opens a book introduction with direct links to both chapters. A left contents sidebar keeps **Book home**, **Chapter 1**, and **Chapter 2** available, with the active chapter’s lessons underneath. On small screens the sidebar becomes a **Contents** disclosure. Each chapter has its own introduction and lesson list. Each of the fifteen lessons now includes a learning goal, three short reasoning paragraphs, an original teaching figure with a caption, a four-step worked example, a quick check, and **Practice this idea**. Extra examples and interactive models expand on request. Previous/next lesson links support sequential reading; existing lesson and practice deep links still work. **Progress / Print / Parents** remain secondary footer tools. Select **家长中文** on the Parents page to reveal Chinese parent notes. Chapter 1 PDFs and fresh printable sheets for either chapter are available under Print.
 
 ### A useful first session
 
@@ -31,7 +33,7 @@ The website opens directly to a concise percentage lesson. Each page shows one i
 
 | Area | Current online edition |
 |---|---|
-| Lessons | 15 lessons across 2 chapters; concise examples, optional fuller explanations, and self-checks |
+| Lessons | 15 lessons across 2 chapters; visible reasoning, 15 original teaching figures, worked examples, self-checks, and optional extra detail |
 | Skills | Division, percent/decimal/fraction, ratios, unit rates, proportional relationships, finding a part, finding a percent, finding a whole, percent change, applications, counting choices, permutations, combinations, repeated choices, and compound probability |
 | Chapter 1 PDF workbook | 8 diagnostic questions, 120 graduated practice questions, and 12 explanation/mistake-analysis questions; 140 numbered exercises plus lesson self-checks |
 | Online formats | Numeric/fraction entry and multiple choice |
@@ -102,11 +104,12 @@ The builder stays scoped to Chapter 1 and uses the fixed `book-v1` seeds and the
 | `content.js` | Full lessons, parent guidance, references, and roadmap |
 | `quick-lessons.js` | Concise student-facing lesson summaries and worked examples |
 | `counting-content.js` | Full and concise Chapter 2 lessons, examples, parent notes, and sources |
+| `ratio-teaching.js` / `counting-teaching.js` | Expanded student explanations, 15 original teaching figures, worked examples, quick checks and specific teaching references |
 | `counting-model.js` / `counting-model.css` | Optional enumerated counting models |
 | `engine.js` | Deterministic question factories, numeric grading, adaptive rules |
 | `engine.test.mjs` | Arithmetic and behavior checks |
 | `app.js` | Book navigation, explorer, practice interface, printing, progress |
-| `styles.css` | Responsive screen and print layout |
+| `styles.css` / `book-layout.css` | Responsive book sidebar, reading column, teaching figures and print layout |
 | `build_workbook.py` | Reproducible PDF authoring script |
 | `downloads/` | Student workbook and separate answer guide |
 
@@ -114,5 +117,5 @@ The builder stays scoped to Chapter 1 and uses the fixed `book-v1` seeds and the
 
 GitHub Pages publishes the repository's `main` branch from the root. Make changes on a review branch, run the engine checks, inspect the affected lesson and practice flow, and merge when ready. `.nojekyll` keeps the site as plain static files. Regenerate the Chapter 1 PDFs when that chapter or its fixed exercise set changes. Chapter 2 uses the online workbook generator for printable practice.
 
-Original work prepared for Hongyu An. First edition: November 19, 2026. Chapter 2 added November 22, 2026. No general redistribution license is granted for original book content by this repository; linked source materials keep their stated licenses.
+Original work prepared for Hongyu An. First edition: November 19, 2026. Chapter 2 and the expanded illustrated online edition added November 22, 2026. The downloadable Chapter 1 PDFs retain their first-edition lesson text; the expanded explanations and new figures are in the online book. No general redistribution license is granted for original book content by this repository; linked source materials keep their stated licenses.
 

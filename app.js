@@ -3,15 +3,30 @@ import { LESSONS as RATIO_LESSONS, ROADMAP, REFERENCES, PARENT_GUIDE } from './c
 import { QUICK_LESSONS as RATIO_QUICK } from './quick-lessons.js';
 import { COUNTING_LESSONS, COUNTING_QUICK, COUNTING_REFERENCES } from './counting-content.js';
 import { countingModelHtml, attachCountingModel } from './counting-model.js';
+import { RATIO_TEACHING, RATIO_TEACHING_REFERENCES } from './ratio-teaching.js';
+import { COUNTING_TEACHING, COUNTING_TEACHING_REFERENCES } from './counting-teaching.js';
 
 const LESSONS = [...RATIO_LESSONS, ...COUNTING_LESSONS];
 const QUICK_LESSONS = {...RATIO_QUICK, ...COUNTING_QUICK};
+const TEACHING = {...RATIO_TEACHING, ...COUNTING_TEACHING};
 const CHAPTERS = [
   {id:'ratios', number:1, title:'Ratios & percentages', start:'percent_part', skills:RATIO_LESSONS.map(l=>l.id), diagnostic:['division','percent_decimal','percent_part','percent_rate','percent_whole','ratios','unit_rate','percent_change']},
   {id:'counting', number:2, title:'Permutations & combinations', start:'counting_choices', skills:COUNTING_LESSONS.map(l=>l.id), diagnostic:['counting_choices','permutations','combinations','counting_repeats','counting_probability','permutations','combinations','counting_repeats']}
 ];
 const chapterById = id => CHAPTERS.find(c=>c.id===id) || CHAPTERS[0];
 const chapterForSkill = id => CHAPTERS.find(c=>c.skills.includes(id)) || CHAPTERS[0];
+const CHAPTER_INTRO = {
+  ratios: {
+    description:'Understand how quantities compare. Use division, ratios, and pictures to solve questions about rates and percentages.',
+    question:'What is the whole, and how does the part relate to it?',
+    goals:['Explain what a division answer means, including its units.','Use equal groups, tables, and graphs to describe a ratio.','Find a part, a percent, or a whole, then solve percent-change problems.']
+  },
+  counting: {
+    description:'Count possibilities without missing any or counting the same result twice. Discover when order and repetition matter.',
+    question:'What makes one outcome different from another?',
+    goals:['Organize possibilities with lists, tables, and branching trees.','Distinguish arrangements with roles from groups without roles.','Decide whether choices may repeat and use counts to find simple probabilities.']
+  }
+};
 
 const $ = selector => document.querySelector(selector);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -33,7 +48,7 @@ let questionCounter = 0;
 let activeLesson = null;
 let activeChapter = 'ratios';
 let lastLesson = 'percent_part';
-let currentView = 'learn';
+let currentView = 'home';
 let poolMode = 'part';
 let poolPercent = 25;
 let poolWhole = 800;
@@ -86,36 +101,68 @@ function proportionalModelHtml() {
   return `<section class="card"><h2>A straight line is not the whole story</h2><p>Notebooks cost $3 each. Compare buying them with no fee and with a $4 order fee.</p><svg viewBox="0 0 540 280" role="img" aria-label="Graph of y equals 3x through the origin, and y equals 3x plus 4 with a starting value of 4. The first is proportional; the second is not." style="width:100%;max-height:340px"><text x="50" y="24" font-size="15" fill="#14334d">Total cost ($)</text>${[0,4,8,12,16].map(y=>`<line x1="50" y1="${220-y*10}" x2="450" y2="${220-y*10}" stroke="#dbe6ec"/><text x="37" y="${225-y*10}" text-anchor="end" font-size="13" fill="#516878">${y}</text>`).join('')}${[0,1,2,3,4].map(x=>`<line x1="${50+x*100}" y1="60" x2="${50+x*100}" y2="220" stroke="#e7eff3"/><text x="${50+x*100}" y="242" text-anchor="middle" font-size="14" fill="#516878">${x}</text>`).join('')}<path d="M50 52V220H466" fill="none" stroke="#516878" stroke-width="2"/><path d="M50 220L450 100" fill="none" stroke="#087f78" stroke-width="3"/><path d="M50 180L450 60" fill="none" stroke="#a54a14" stroke-width="3" stroke-dasharray="7 4"/><circle cx="50" cy="220" r="5" fill="#087f78"/><circle cx="50" cy="180" r="5" fill="#a54a14"/><text x="325" y="127" font-size="15" fill="#087f78">y = 3x</text><text x="322" y="54" font-size="15" fill="#a54a14">y = 3x + 4</text><text x="250" y="271" text-anchor="middle" font-size="15" fill="#14334d">Number of notebooks (x)</text></svg><p class="form-note"><strong>No fee:</strong> y = 3x. The graph goes through (0, 0), and y ÷ x is always 3 when x is positive.<br><strong>$4 fee:</strong> y = 3x + 4. The graph starts at (0, 4), so the total cost is not proportional to the number of notebooks.</p></section>`;
 }
 
+function renderBookNav() {
+  const chapter = chapterById(activeChapter);
+  const showLessons = !['home','parents'].includes(currentView);
+  $('#book-contents').innerHTML = `
+    <a class="book-home-link${currentView==='home'?' active':''}" href="#home"${currentView==='home'?' aria-current="page"':''}>Book home</a>
+    <p class="nav-label">Chapters</p>
+    <div class="sidebar-chapters">${CHAPTERS.map(c=>`<a class="sidebar-chapter${showLessons&&c.id===activeChapter?' active':''}" href="#chapter/${c.id}"${currentView==='chapter'&&c.id===activeChapter?' aria-current="page"':''}><span class="chapter-number">${c.number}</span><span>${escapeHtml(c.title)}</span></a>`).join('')}</div>
+    ${showLessons?`<div class="sidebar-lessons"><p class="nav-label">In chapter ${chapter.number}</p><ol>${chapter.skills.map((id,i)=>`<li><a href="#learn/${id}"${activeLesson===id?' class="active" aria-current="page"':''}><span>${chapter.number}.${i+1}</span> ${escapeHtml(QUICK_LESSONS[id].title)}</a></li>`).join('')}</ol></div>`:''}`;
+}
+
+function renderHome() {
+  $('#home-view').innerHTML = `
+    <header class="book-intro"><p class="eyebrow">An interactive math book</p><h1>Grade 7 Math Lab</h1>
+      <p class="book-subtitle">Understand the idea. See how it works. Try it yourself.</p>
+      <p>This book connects everyday questions with clear explanations, teaching diagrams, and worked examples. Practice online, get feedback after each answer, and revisit the ideas that need more work.</p>
+      <p class="form-note">The current book has two chapters. It develops selected Grade 7 topics, with supporting foundations and extensions.</p>
+    </header>
+    <section class="home-chapters" aria-labelledby="home-chapters-heading"><h2 id="home-chapters-heading">Chapters</h2>
+      ${CHAPTERS.map(c=>`<article class="chapter-entry"><p class="eyebrow">Chapter ${c.number} · ${c.skills.length} lessons</p><h3><a href="#chapter/${c.id}">${escapeHtml(c.title)}</a></h3><p>${escapeHtml(CHAPTER_INTRO[c.id].description)}</p><div class="chapter-entry-links"><a class="primary button" href="#chapter/${c.id}">Read chapter ${c.number}</a><a href="#practice/${c.id}">Practice</a></div></article>`).join('')}
+    </section>
+    <section class="how-to-read" aria-labelledby="how-to-heading"><h2 id="how-to-heading">How to use this book</h2><ol><li><strong>Learn one idea.</strong> Read the explanation and look closely at the diagram.</li><li><strong>Work through an example.</strong> Explain why each step makes sense, then try the quick check.</li><li><strong>Practice a little.</strong> Start with eight questions. Use the feedback, and check your record in <a href="#progress/${activeChapter}">Progress</a>.</li></ol><p class="form-note">You can return to any chapter from the contents menu. There is no timer.</p></section>`;
+}
+
+function renderChapter() {
+  const chapter = chapterById(activeChapter);
+  const intro = CHAPTER_INTRO[chapter.id];
+  $('#chapter-view').innerHTML = `
+    <p class="breadcrumb"><a href="#home">Book home</a><span aria-hidden="true"> / </span>Chapter ${chapter.number}</p>
+    <header class="chapter-intro"><p class="eyebrow">Chapter ${chapter.number}</p><h1>${escapeHtml(chapter.title)}</h1><p>${escapeHtml(intro.description)}</p><p class="key-idea">${escapeHtml(intro.question)}</p></header>
+    <section class="chapter-goals"><h2>What you will learn</h2><ul>${intro.goals.map(g=>`<li>${escapeHtml(g)}</li>`).join('')}</ul></section>
+    <div class="lesson-actions"><a class="primary button" href="#learn/${chapter.skills[0]}">Start the first lesson</a><a href="#practice/${chapter.id}">Practice this chapter</a></div>
+    <section class="chapter-lesson-list"><h2>Lessons</h2><ol>${chapter.skills.map((id,i)=>`<li><a href="#learn/${id}"><span class="lesson-list-number">${chapter.number}.${i+1}</span><span><strong>${escapeHtml(QUICK_LESSONS[id].title)}</strong><small>${escapeHtml(TEACHING[id]?.goal||LESSONS.find(l=>l.id===id).goal)}</small></span></a></li>`).join('')}</ol></section>`;
+}
+
 function renderLearn() {
   const lesson = LESSONS.find(l=>l.id===activeLesson) || LESSONS.find(l=>l.id===chapterById(activeChapter).start);
   const chapter = chapterForSkill(lesson.id);
   const chapterLessons = LESSONS.filter(l=>chapter.skills.includes(l.id));
   const brief = QUICK_LESSONS[lesson.id];
+  const teaching = TEACHING[lesson.id];
   const number = chapterLessons.indexOf(lesson)+1;
-  const example = brief.example;
+  const example = teaching?.worked || {prompt:brief.example.question,steps:brief.example.steps,answer:brief.example.answer};
+  const check = teaching?.check || {...lesson.check,why:''};
   const hasPool = ['percent_part','percent_rate','percent_whole','percent_decimal'].includes(lesson.id);
   $('#learn-view').innerHTML = `
-    <div class="book-nav chapter-nav"><label class="lesson-picker" for="chapter-picker">Chapter
-      <select id="chapter-picker">${chapterOptions(chapter.id)}</select></label>
-      <label class="lesson-picker" for="lesson-picker">Lesson
-      <select id="lesson-picker">${chapterLessons.map((l,i)=>`<option value="${l.id}"${l.id===lesson.id?' selected':''}>${i+1}. ${escapeHtml(QUICK_LESSONS[l.id].title)}</option>`).join('')}</select></label></div>
-    <section class="lesson-brief"><h1>${escapeHtml(brief.title)}</h1><p>${escapeHtml(brief.idea)}</p><p class="key-idea">${escapeHtml(brief.rule)}</p></section>
-    <article class="lesson-example"><h2>Example</h2><p>${escapeHtml(example.question)}</p>
-      ${hasPool?poolPictureHtml():''}
-      <ol>${example.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(example.answer)}</p>
-    </article>
-    <div class="lesson-actions"><button class="primary" type="button" id="lesson-practice">Practice this idea</button>${chapterLessons[number]?`<a class="quiet-link" href="#learn/${chapterLessons[number].id}">Next lesson</a>`:`<a class="quiet-link" href="#practice/${chapter.id}">Review this chapter</a>`}</div>
-    ${chapter.id==='counting'?`<details class="optional-detail"><summary>See the possibilities</summary><div id="counting-model">${countingModelHtml(lesson.id)}</div></details>`:hasPool?`<details class="optional-detail"><summary>Try the pool model</summary>${explorerHtml()}</details>`:lesson.id==='proportional'?`<details class="optional-detail"><summary>See the graph</summary>${proportionalModelHtml()}</details>`:''}
-    <details class="optional-detail"><summary>More explanation</summary>
-      <h2>Build the idea</h2>${lesson.explanation.map(text=>`<p>${escapeHtml(text)}</p>`).join('')}
+    <p class="breadcrumb"><a href="#home">Book home</a><span aria-hidden="true"> / </span><a href="#chapter/${chapter.id}">Chapter ${chapter.number}</a><span aria-hidden="true"> / </span>Lesson ${number}</p>
+    <header class="lesson-brief"><p class="eyebrow">${chapter.number}.${number} · ${escapeHtml(chapter.title)}</p><h1>${escapeHtml(brief.title)}</h1><p class="lesson-goal">${escapeHtml(teaching?.goal||lesson.goal)}</p></header>
+    <section class="teaching-section"><h2>Understand the idea</h2>${(teaching?.paragraphs||[brief.idea]).map(text=>`<p>${escapeHtml(text)}</p>`).join('')}<p class="key-idea">${escapeHtml(brief.rule)}</p></section>
+    ${teaching?.figure?`<figure class="teaching-figure">${teaching.figure.html}<figcaption><strong>Figure ${chapter.number}.${number}.</strong> ${escapeHtml(teaching.figure.caption)}</figcaption></figure>`:''}
+    <article class="lesson-example"><h2>Worked example</h2><p class="example-question">${escapeHtml(example.prompt)}</p><ol>${example.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(example.answer)}</p></article>
+    <section class="quick-check"><h2>Try one</h2><p>${escapeHtml(check.prompt)}</p><details><summary>Check your thinking</summary><p class="answer-line">${escapeHtml(check.answer)}</p>${check.why?`<p>${escapeHtml(check.why)}</p>`:''}</details></section>
+    <div class="lesson-actions"><button class="primary" type="button" id="lesson-practice">Practice this idea</button><a class="quiet-link" href="#practice/${chapter.id}">Practice the chapter</a></div>
+    ${chapter.id==='counting'?`<details class="optional-detail"><summary>Explore the possibilities</summary><div id="counting-model">${countingModelHtml(lesson.id)}</div></details>`:hasPool?`<details class="optional-detail"><summary>Try the pool model</summary>${explorerHtml()}</details>`:lesson.id==='proportional'?`<details class="optional-detail"><summary>Compare two graphs</summary>${proportionalModelHtml()}</details>`:''}
+    <details class="optional-detail"><summary>More examples and explanations</summary>
+      <h2>A closer look</h2>${lesson.explanation.map(text=>`<p>${escapeHtml(text)}</p>`).join('')}
       ${lesson.vocabulary?.length?`<div class="vocab">${lesson.vocabulary.map(v=>`<span><strong>${escapeHtml(v.term)}</strong>${escapeHtml(v.meaning)}</span>`).join('')}</div>`:''}
-      ${lesson.workedExamples.filter(e=>e.question!==brief.example.question).map((e,i)=>`<article class="example"><h3>Another example ${i+1}</h3><p>${escapeHtml(e.question)}</p><ol>${e.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(e.answer)}</p></article>`).join('')}
+      ${lesson.workedExamples.filter(e=>e.question!==example.prompt).map((e,i)=>`<article class="example"><h3>Another example ${i+1}</h3><p>${escapeHtml(e.question)}</p><ol>${e.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(e.answer)}</p></article>`).join('')}
       <p class="watch-out"><strong>Check this</strong>${escapeHtml(lesson.watchOut)}</p>
-      <h3>Try it yourself</h3><p>${escapeHtml(lesson.check.prompt)}</p><details><summary>Show answer</summary><p>${escapeHtml(lesson.check.answer)}</p></details>${lesson.extension?`<details><summary>Optional extension</summary><p>${escapeHtml(lesson.extension)}</p></details>`:''}
+      ${lesson.extension?`<details><summary>Optional extension</summary><p>${escapeHtml(lesson.extension)}</p></details>`:''}
       ${chineseParents?`<div class="parent-note" lang="zh-Hans"><strong>家长讲解提示</strong><p>${escapeHtml(lesson.parentZh)}</p></div>`:''}
-    </details>`;
-  $('#chapter-picker').addEventListener('change',event=>{location.hash=`learn/${chapterById(event.target.value).start}`;});
-  $('#lesson-picker').addEventListener('change',event=>{location.hash=`learn/${event.target.value}`;});
+    </details>
+    <nav class="lesson-pager" aria-label="Lesson navigation">${number>1?`<a href="#learn/${chapterLessons[number-2].id}"><span>Previous lesson</span>${escapeHtml(QUICK_LESSONS[chapterLessons[number-2].id].title)}</a>`:`<a href="#chapter/${chapter.id}"><span>Chapter ${chapter.number}</span>Chapter contents</a>`}${chapterLessons[number]?`<a href="#learn/${chapterLessons[number].id}"><span>Next lesson</span>${escapeHtml(QUICK_LESSONS[chapterLessons[number].id].title)}</a>`:`<a href="#practice/${chapter.id}"><span>Next step</span>Review this chapter</a>`}</nav>`;
   $('#lesson-practice').addEventListener('click',()=>startPractice(false,lesson.id,8,chapter.id));
   poolMode=lesson.id==='percent_rate'?'percent':lesson.id==='percent_whole'?'whole':'part';
   attachExplorer();
@@ -298,13 +345,13 @@ function renderParents() {
     <details class="optional-detail"><summary>Helping with a lesson</summary><h3>Counting: name a different outcome</h3><p>Ask whether AB and BA are different. Named roles or positions make order matter; a group with no roles counts once. Check whether repeats are allowed, then list a small example before multiplying.</p>${PARENT_GUIDE.map(g=>`<h3>${escapeHtml(g.heading)}</h3><p>${escapeHtml(g.body)}</p>${chineseParents?`<p class="parent-note" lang="zh-Hans">${escapeHtml(g.zh)}</p>`:''}`).join('')}</details>
     <details class="optional-detail"><summary>How adaptive practice works</summary><p>Original question templates vary the numbers and situations. Code calculates the answers; no live AI model grades a child's response.</p><ol><li>An incorrect answer or a hint leads to more practice of that idea.</li><li>Repeated difficulty lowers the level or revisits a prerequisite.</li><li>Three independent correct answers in succession can raise the level.</li><li>A review signal requires 4 independent successes in the last 5 first attempts, at least 2 contexts, and a typed answer.</li><li>In adaptive mode, review is eligible after 2 days, or 7 days at the highest level, when the learner returns.</li></ol><p>These are practical teaching rules, not a validated mastery assessment. Ask the learner to explain before deciding why an answer was wrong.</p><p>Answers stay in the current browser. They are not uploaded to GitHub or synchronized across devices. Progress can be exported from the Progress page.</p></details>
     <details class="optional-detail"><summary>Michigan standards and the fall plan</summary><p>Michigan defines annual expectations. Local schools choose their sequence. This suggested 16-week plan includes later topics beyond the current volume.</p><div class="table-wrap"><table class="roadmap-table"><thead><tr><th>Weeks</th><th>Focus</th><th>Standards</th><th>In this edition</th></tr></thead><tbody>${ROADMAP.map(r=>`<tr><td>${escapeHtml(r.weeks)}</td><td>${escapeHtml(r.focus)}</td><td>${escapeHtml(r.standards)}</td><td>${escapeHtml(r.status)}</td></tr>`).join('')}</tbody></table></div><p>Chapter 1 covers selected ratio and percentage skills. Chapter 2 develops organized counting and simple compound probability (7.SP.C.8), with introductory permutations and combinations as supporting extensions. Formal permutation and combination formulas appear in the high-school standard S-CP.9(+); they are not required for this chapter. These two chapters do not cover the whole Grade 7 year.</p></details>
-    <details class="optional-detail"><summary>Sources and teaching references</summary><p>The book's lessons, examples, question templates, and diagrams are original. These references informed scope and teaching design. Linked materials retain their own licenses.</p>${REFERENCES.concat(COUNTING_REFERENCES,TEACHING_REFERENCES).map(r=>`<article class="resource"><h3><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a></h3><p>${escapeHtml(r.use)}</p><small>${escapeHtml(r.license)}</small></article>`).join('')}<p class="form-note">Chapter 2 added November 22, 2026. External publishers do not endorse this book.</p></details>`;
+    <details class="optional-detail"><summary>Sources and teaching references</summary><p>The book's lessons, examples, question templates, and diagrams are original. These references informed scope and teaching design. Linked materials retain their own licenses.</p>${REFERENCES.concat(COUNTING_REFERENCES,RATIO_TEACHING_REFERENCES,COUNTING_TEACHING_REFERENCES,TEACHING_REFERENCES).map(r=>`<article class="resource"><h3><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a></h3><p>${escapeHtml(r.use)}</p><small>${escapeHtml(r.license)}</small></article>`).join('')}<p class="form-note">Chapter 2 added November 22, 2026. External publishers do not endorse this book.</p></details>`;
   $('#parent-start-check').addEventListener('click',()=>startPractice(true));
 }
 
 function route() {
-  const [candidate,item]=(location.hash.slice(1)||'learn').split('/');
-  currentView=['learn','practice','print','progress','parents'].includes(candidate)?candidate:'learn';
+  const [candidate,item]=(location.hash.slice(1)||'home').split('/');
+  currentView=['home','chapter','learn','practice','print','progress','parents'].includes(candidate)?candidate:'home';
   activeLesson=currentView==='learn'?(LESSONS.some(l=>l.id===item)?item:lastLesson):null;
   if(activeLesson) {
     lastLesson=activeLesson;
@@ -314,18 +361,30 @@ function route() {
   document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==`${currentView}-view`);
   const learnTarget=chapterForSkill(lastLesson).id===activeChapter?lastLesson:chapterById(activeChapter).start;
   document.querySelectorAll('[data-tab]').forEach(a=>{
-    a.classList.toggle('active',a.dataset.tab===currentView);
-    if(a.dataset.tab===currentView)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+    const selected=a.dataset.tab===currentView || (currentView==='chapter'&&a.dataset.tab==='learn');
+    a.classList.toggle('active',selected);
+    if(selected)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
     a.setAttribute('href',a.dataset.tab==='learn'?`#learn/${learnTarget}`:a.dataset.tab==='parents'?'#parents':`#${a.dataset.tab}/${activeChapter}`);
   });
-  $('.brand').setAttribute('href',`#learn/${learnTarget}`);
-  ({learn:renderLearn,practice:renderPractice,print:renderPrint,progress:renderProgress,parents:renderParents})[currentView]();
+  $('.brand').setAttribute('href','#home');
+  document.body.dataset.view=currentView;
+  document.body.dataset.chapter=activeChapter;
+  renderBookNav();
+  ({home:renderHome,chapter:renderChapter,learn:renderLearn,practice:renderPractice,print:renderPrint,progress:renderProgress,parents:renderParents})[currentView]();
+  $('.book-sidebar').classList.remove('is-open');
+  $('#contents-toggle').setAttribute('aria-expanded','false');
   $('#parent-language').hidden=currentView!=='parents';
   $('#parent-language').setAttribute('aria-pressed',String(chineseParents));
   $('#parent-language').textContent=chineseParents?'中文提示已开':'家长中文';
-  document.title=`${activeLesson?QUICK_LESSONS[activeLesson].title:({learn:chapterById(activeChapter).title,practice:'Practice: '+chapterById(activeChapter).title,print:'Printable Workbook',progress:'My Progress',parents:'Parent Guide'})[currentView]} · Grade 7 Math Lab`;
+  const title=activeLesson?QUICK_LESSONS[activeLesson].title:({chapter:`Chapter ${chapterById(activeChapter).number}: ${chapterById(activeChapter).title}`,practice:'Practice: '+chapterById(activeChapter).title,print:'Printable Workbook',progress:'My Progress',parents:'Parent Guide'})[currentView];
+  document.title=currentView==='home'?'Grade 7 Math Lab · Interactive Math Book':`${title} · Grade 7 Math Lab`;
   window.scrollTo({top:0,behavior:'instant'});
 }
+
+$('#contents-toggle').addEventListener('click',()=>{
+  const open=$('.book-sidebar').classList.toggle('is-open');
+  $('#contents-toggle').setAttribute('aria-expanded',String(open));
+});
 
 $('#parent-language').addEventListener('click',()=>{
   chineseParents=!chineseParents;

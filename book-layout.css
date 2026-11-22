@@ -1,0 +1,118 @@
+/* A quiet book layout: contents at the left, one reading column. */
+.topbar { max-width: 1192px; min-height: 76px; padding: 12px 24px; }
+.brand { font-size: 1.03rem; }
+.shell { display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 48px; max-width: 1192px; margin: 0 auto; padding: 0 24px; align-items: start; }
+main { max-width: none; padding: 36px 0 24px; margin: 0; }
+.book-sidebar { display: block; position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; padding: 32px 18px 24px 0; border-right: 1px solid var(--line); scrollbar-width: thin; }
+.contents-toggle { display: none; }
+#book-contents a { text-decoration: none; }
+.book-home-link { display: block; padding: 9px 12px; color: var(--muted); font-weight: 600; font-size: .88rem; border-radius: 4px; }
+.book-home-link.active { background: var(--light); color: var(--teal); }
+.nav-label { margin: 26px 12px 9px; color: var(--muted); font-size: .72rem; font-weight: 650; }
+.sidebar-chapters { display: grid; gap: 6px; }
+.sidebar-chapter { display: flex; gap: 11px; padding: 11px 12px; color: var(--ink); font-size: .88rem; line-height: 1.45; border-radius: 4px; }
+.sidebar-chapter.active { background: var(--light); color: var(--teal); font-weight: 650; }
+.chapter-number { color: var(--muted); font-variant-numeric: tabular-nums; }
+.sidebar-lessons ol { padding: 0; margin: 0; list-style: none; }
+.sidebar-lessons a { display: block; padding: 8px 10px 8px 12px; color: var(--muted); font-size: .76rem; line-height: 1.5; border-left: 2px solid transparent; }
+.sidebar-lessons a span { margin-right: 4px; font-variant-numeric: tabular-nums; }
+.sidebar-lessons a.active { border-left-color: var(--teal); background: var(--light); color: var(--teal); font-weight: 650; }
+#book-contents a:hover { background: var(--light); color: var(--teal); }
+.breadcrumb { margin: 0 0 22px; color: var(--muted); font-size: .78rem; }
+.breadcrumb a { color: var(--muted); }
+.breadcrumb span { margin: 0 8px; color: #819087; }
+.book-intro { margin: 6px 0 32px; }
+.book-intro h1 { font-size: clamp(2rem, 4vw, 2.5rem); margin-bottom: 14px; }
+.book-subtitle { font-size: 1.12rem; line-height: 1.5; color: var(--ink); }
+.book-intro > p:not(.eyebrow) { max-width: 65ch; }
+.home-chapters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin: 34px 0; }
+.home-chapters > h2 { grid-column: 1 / -1; margin: 0; }
+.chapter-entry { display: flex; flex-direction: column; padding: 20px; border: 1px solid var(--line); border-radius: 5px; }
+.chapter-entry h3 { margin-bottom: 13px; font-size: 1.16rem; line-height: 1.4; }
+.chapter-entry h3 a { color: var(--ink); text-decoration: none; }
+.chapter-entry p:not(.eyebrow) { font-size: .9rem; line-height: 1.6; }
+.chapter-entry-links { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: auto; padding-top: 6px; font-size: .82rem; }
+.chapter-entry-links .button { font-size: .82rem; padding: 8px 13px; }
+.how-to-read { padding-top: 10px; }
+.how-to-read ol, .chapter-goals ul { padding-left: 24px; }
+.how-to-read li, .chapter-goals li { padding: 5px 0; }
+.how-to-read { font-size: .92rem; }
+.chapter-intro { margin-bottom: 30px; }
+.chapter-goals { margin: 28px 0; }
+.chapter-lesson-list { margin-top: 36px; }
+.chapter-lesson-list ol { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
+.chapter-lesson-list li { border-bottom: 1px solid var(--line); }
+.chapter-lesson-list a { display: flex; gap: 18px; padding: 17px 0; text-decoration: none; color: var(--ink); }
+.chapter-lesson-list a:hover strong { color: var(--teal); text-decoration: underline; }
+.lesson-list-number { min-width: 34px; color: var(--teal); font-weight: 600; }
+.chapter-lesson-list strong { display: block; font-size: .96rem; }
+.chapter-lesson-list small { display: block; margin-top: 4px; font-size: .83rem; line-height: 1.6; font-weight: 400; }
+.lesson-goal { color: var(--muted); font-size: 1rem; max-width: 65ch; }
+.teaching-section { margin-top: 30px; }
+.teaching-section > p { max-width: 66ch; }
+.teaching-section .key-idea { margin-top: 24px; }
+.teaching-figure { margin: 26px 0 34px; padding: 18px 0 0; }
+.teaching-figure-surface { width: 100%; max-width: 100%; }
+.teaching-figure svg { display: block; width: 100%; max-width: 560px; height: auto; margin: 0 auto; }
+.teaching-figure figcaption { margin: 15px 0 0; padding-top: 12px; border-top: 1px solid var(--line); font-size: .82rem; line-height: 1.6; color: var(--muted); }
+.teaching-figure figcaption strong { color: var(--ink); }
+.figure-scroll { max-width: 100%; overflow-x: auto; }
+.figure-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; justify-items: center; }
+.figure-panel { width: 100%; max-width: 280px; }
+.counting-teaching-diagram { display: block; width: 100%; height: auto; }
+.example-question { font-weight: 550; }
+.lesson-example { padding-top: 26px; padding-bottom: 26px; margin-bottom: 30px; }
+.lesson-example li { padding: 6px 0; }
+.quick-check { margin: 28px 0; }
+.quick-check details { margin: 12px 0 0; border-top: 0; padding-top: 0; }
+.quick-check summary { color: var(--teal); }
+.lesson-pager { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; border-top: 1px solid var(--line); margin-top: 36px; padding-top: 22px; }
+.lesson-pager a { font-size: .86rem; text-decoration: none; }
+.lesson-pager a:last-child { text-align: right; }
+.lesson-pager a span { display: block; font-size: .73rem; color: var(--muted); margin-bottom: 5px; }
+.lesson-pager a:hover { text-decoration: underline; }
+.page-footer { margin-top: 36px; }
+
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 204px minmax(0, 1fr); gap: 28px; padding: 0 20px; }
+  .book-sidebar { padding-right: 12px; }
+  .home-chapters { grid-template-columns: 1fr; }
+  .chapter-entry { padding: 20px; }
+  .chapter-entry-links { margin-top: 3px; }
+}
+
+@media (max-width: 720px) {
+  .topbar { min-height: 64px; padding: 10px 18px; gap: 10px; }
+  .brand { font-size: .94rem; }
+  .main-nav a { padding: 8px 10px; }
+  .shell { display: block; padding: 0 18px; }
+  main { padding: 25px 0 18px; }
+  .book-sidebar { position: static; max-height: none; overflow: visible; padding: 0; border-right: 0; border-bottom: 1px solid var(--line); }
+  .contents-toggle { display: flex; width: 100%; min-height: 48px; justify-content: space-between; align-items: center; border: 0; background: #fff; color: var(--teal); font-weight: 600; font-size: .86rem; padding: 8px 0; }
+  .contents-toggle[aria-expanded=true] span { transform: rotate(180deg); }
+  #book-contents { display: none; padding: 5px 0 18px; }
+  .book-sidebar.is-open #book-contents { display: block; }
+  .nav-label { margin-top: 16px; }
+  .sidebar-chapters { grid-template-columns: 1fr 1fr; }
+  .sidebar-lessons a { font-size: .85rem; min-height: 42px; }
+  .book-intro { margin-top: 0; }
+  .book-intro h1 { font-size: 2rem; }
+  .book-subtitle { font-size: 1.04rem; }
+  .breadcrumb { font-size: .74rem; margin-bottom: 20px; }
+  .home-chapters { margin: 28px 0; }
+  .teaching-figure { padding-top: 8px; }
+  .teaching-figure figcaption { font-size: .81rem; }
+  .lesson-pager { gap: 18px; }
+}
+
+@media (max-width: 560px) {
+  .figure-comparison { grid-template-columns: 1fr; gap: 24px; }
+  .chapter-entry { padding: 18px; }
+  .chapter-lesson-list a { gap: 11px; }
+}
+
+@media print {
+  .book-sidebar, .contents-toggle { display: none !important; }
+  .shell { display: block; max-width: none; padding: 0; }
+  main { padding: 0; }
+}

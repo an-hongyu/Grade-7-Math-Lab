@@ -99,3 +99,21 @@ Added November 22, 2026. All explanations, examples, question templates, and int
 - Illustrative Mathematics, classic Grade 7 Unit 8, Probability and Sampling: https://im.kendallhunt.com/MS/teachers/2/8/index.html . Reference for enumerating sample spaces and connecting counts to compound-event probability. The classic edition carries CC BY 4.0 with trademark and asset exceptions; no publisher problems or artwork are copied here.
 
 Every probability problem explicitly defines fair, independent or uniformly selected outcomes as appropriate. Ordered outcomes and unordered groups are kept distinct; repetition permissions are stated in the problem. The model and question-bank checks independently enumerate small outcome spaces.
+
+
+## Illustrated online lessons and book navigation — November 22, 2026
+
+The online edition now has a book introduction, two chapter overview pages, a left chapter-and-lesson contents panel, and fifteen original instructional figures. The organization follows the author’s existing textbook pattern: introduction, chapter contents, one main reading column, and previous/next lessons. Mobile navigation is folded into a Contents control.
+
+Specific teaching references:
+
+- **Illustrative Mathematics / Open Up Resources, Percentages and Tape Diagrams:** https://im.kendallhunt.com/MS_ACC/teachers/1/2/21/preparation.html . Equal tape segments connect 25% to one fourth and require the whole to be identified as 100%. This is a foundation reference, not a claim about Grade 7 sequencing.
+- **Illustrative Mathematics, Ratios and Rates With Fractions:** https://im.kendallhunt.com/MS/teachers/2/4/2/preparation.html . Tape diagrams and aligned double number lines connect equivalent quantities to a unit rate.
+- **Illustrative Mathematics, One Hundred Percent:** https://im.kendallhunt.com/MS/students/2/4/7/index.html . Percent-change diagrams identify the original quantity as the 100% baseline.
+- **Illustrative Mathematics, Keeping Track of All Possible Outcomes:** https://im.kendallhunt.com/MS/students/2/8/8/index.html . Organized lists, tables and branching trees represent complete outcomes without omission or duplication.
+- **OpenStax Contemporary Mathematics, 7.3 Combinations:** https://openstax.org/books/contemporary-mathematics/pages/7-3-combinations . The explanation connects ordered selections with duplicate orders of the same group. Our introductory example uses only three people and pairs; factorial formulas are not required for the main lesson.
+- **OpenStax Contemporary Mathematics, 7.4 Tree Diagrams, Tables, and Outcomes:** https://openstax.org/books/contemporary-mathematics/pages/7-4-tree-diagrams-tables-and-outcomes . Reference for organizing sample spaces and relating counts to probability under the stated equal-likelihood assumptions.
+
+These resources informed representation and teaching sequence. All new wording, figures, values, and layouts are independently authored for this book; no publisher illustrations or problem banks are reproduced. The cited classic IM curriculum identifies CC BY 4.0, with trademark and asset exceptions. OpenStax materials keep their stated source license. Source access does not imply publisher endorsement.
+
+The figures explain equal sharing/grouping, a hundred grid, ratio tapes, unit-rate number lines, a proportional graph, the three percentage unknowns, the original percent-change baseline, successive discount/tax bases, a product table, a role-assignment tree, duplicate team orders, repetition grids, and an equally likely coin sample space. Figures have text descriptions and captions; mathematical meaning is also explained in the adjacent text.

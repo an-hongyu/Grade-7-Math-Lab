@@ -14,8 +14,14 @@ export const SKILLS = Object.freeze([
   { id: 'percent_whole', title: 'Find the whole', standard: '7.RP.A.3', prerequisites: ['percent_decimal', 'percent_part'] },
   { id: 'percent_change', title: 'Percent increase and decrease', standard: '7.RP.A.3', prerequisites: ['percent_rate'] },
   { id: 'applications', title: 'Discounts, tax, and two-step problems', standard: '7.RP.A.3', prerequisites: ['percent_part', 'percent_change'] },
+  { id: 'counting_choices', title: 'Count the choices', standard: '7.SP.C.8b (organized sample spaces)', prerequisites: [] },
+  { id: 'permutations', title: 'Arrange: order matters', standard: '7.SP.C.8b connection; introductory extension', prerequisites: ['counting_choices'] },
+  { id: 'combinations', title: 'Choose: order does not matter', standard: '7.SP.C.8b connection; introductory extension', prerequisites: ['permutations'] },
+  { id: 'counting_repeats', title: 'Can a choice repeat?', standard: '7.SP.C.8b connection; introductory extension', prerequisites: ['counting_choices', 'permutations'] },
+  { id: 'counting_probability', title: 'Count outcomes to find probability', standard: '7.SP.C.7a; 7.SP.C.8a–b', prerequisites: ['counting_choices', 'combinations', 'counting_repeats'] },
 ]);
 
+export const COUNTING_SKILL_IDS = Object.freeze(['counting_choices','permutations','combinations','counting_repeats','counting_probability']);
 const IDS = new Set(SKILLS.map(s => s.id));
 const DAY = 86400000;
 const EPS = 1e-6;
@@ -345,7 +351,179 @@ function applications(level,rng) {
   };
 }
 
-const FACTORIES={division,percent_decimal:percentDecimal,ratios,unit_rate:unitRate,proportional,percent_part:percentPart,percent_rate:percentRate,percent_whole:percentWhole,percent_change:percentChange,applications};
+
+function fallingCount(n, k) {
+  let value=1;
+  for(let i=0;i<k;i++) value*=n-i;
+  return value;
+}
+function factorial(n) { return fallingCount(n,n); }
+function chooseCount(n,k) { return fallingCount(n,k)/factorial(k); }
+function gcd(a,b) { while(b) [a,b]=[b,a%b]; return a; }
+function fractionText(numerator,denominator) {
+  const d=gcd(numerator,denominator);
+  return denominator/d===1?String(numerator/d):`${numerator/d}/${denominator/d}`;
+}
+function probabilityLabel(value) {
+  if(Number.isInteger(value)||value<0||value>1) return fmt(value);
+  for(let denominator=2;denominator<=200;denominator++) {
+    const numerator=Math.round(value*denominator);
+    if(same(value,numerator/denominator)) return fractionText(numerator,denominator);
+  }
+  return fmt(value);
+}
+
+function countingChoices(level,rng) {
+  const pick=picker(rng),context=pick(['outfits','lunch','robot_route','art','game_character']);
+  const sizes=Array.from({length:level===1?2:level===2?3:4},()=>pick(level===1?[2,3,4,5,6]:[2,3,4,5]));
+  const nouns={outfits:['shirts','pairs of pants','hats','pairs of shoes'],lunch:['sandwiches','drinks','fruits','snacks'],robot_route:['start paths','middle paths','end paths','exit paths'],art:['paper colors','sticker designs','border designs','title fonts'],game_character:['hair styles','outfits','pets','backgrounds']}[context];
+  const groups=sizes.map((n,i)=>`${n} ${nouns[i]}`);
+  const answer=sizes.reduce((a,b)=>a*b,1),sum=sizes.reduce((a,b)=>a+b,0);
+  return {
+    prompt:`There are ${groups.join(', ')}. Choose one option from each group. Every option can go with every option in the other groups. How many different ${context==='robot_route'?'routes':context==='outfits'?'outfits':context==='lunch'?'meals':context==='art'?'designs':'characters'} can you make?`,
+    answer,unit:'ways',context,
+    hints:[`List the choices in the first group. Each can go with every choice in the next group.`,`Multiply the number of choices at each step.`,`${sizes.join(' × ')} = ?`],
+    steps:[`Choices at successive steps: ${sizes.join(', ')}.`,`For each first choice, every later choice is available: ${sizes.join(' × ')} = ${answer}.`],
+    math:{operation:'count_product',operands:sizes},
+    errorPatterns:[err(sum,'add_choices','Each first choice pairs with every later choice. Multiply the group sizes instead of adding them.'),err(sizes[0],'missing_stage','That counts only the first group. Include a choice from every group.'),err(answer/sizes.at(-1),'missing_stage','You have left out the final group of choices.')]
+  };
+}
+
+function permutations(level,rng) {
+  const pick=picker(rng),context=pick(['line','books','jobs','race','robot_tasks','flags','playlist','display']);
+  const n=pick(level===1?[3,4,5,6,7,8]:level===2?[4,5,6,7,8]:[4,5,6,7]);
+  const k=level===1?2:level===2?3:pick([3,4]);
+  const facts={
+    line:`Choose ${k} of ${n} different students to stand in a line.`,
+    books:`Choose ${k} of ${n} different books and put them in a row on a shelf.`,
+    jobs:`Assign ${k} different numbered jobs to ${k} of ${n} helpers, one job per helper.`,
+    race:`There are ${n} runners. Record who finishes in places 1 through ${k}, with no ties.`,
+    robot_tasks:`Choose ${k} of ${n} different robot tasks and put them in the order they will run.`,
+    flags:`Choose ${k} of ${n} different flags and hang them in a row from left to right.`,
+    playlist:`Choose ${k} of ${n} different songs and set their playing order.`,
+    display:`Choose ${k} of ${n} different cards and place them in ${k} numbered display slots.`
+  };
+  const answer=fallingCount(n,k),slots=Array.from({length:k},(_,i)=>n-i);
+  return {
+    prompt:`${facts[context]} Nothing can be chosen twice. A different order counts as a different result. How many results are possible?`,
+    answer,unit:'arrangements',context,
+    hints:[`The positions are different, so order matters.`,`There are ${n} choices for the first position, then ${n-1} for the second because nothing is reused.`,`${slots.join(' × ')} = ?`],
+    steps:[`The ${k} positions have ${slots.join(', ')} choices.`,`Multiply the shrinking choices: ${slots.join(' × ')} = ${answer}.`,`Changing the order changes the result, so do not divide out the different orders.`],
+    math:{operation:'count_ordered',operands:[n,k]},
+    errorPatterns:[err(chooseCount(n,k),'unordered_instead','Order matters here. For example, A then B and B then A are different arrangements.'),err(n**k,'allow_repeats','A person or item can be used only once. There is one fewer choice after each position is filled.'),err(n*k,'add_or_multiply_slots','Count the choices for each position separately, then multiply those changing counts.')]
+  };
+}
+
+function combinations(level,rng) {
+  const pick=picker(rng),context=pick(['team','books','fruit','stickers','robot_parts','games','flowers','helpers']);
+  const n=pick(level===1?[4,5,6,7,8,9]:level===2?[5,6,7,8,9]:[6,7,8,9,10]);
+  const k=level===1?2:level===2?3:pick([2,3]);
+  const facts={
+    team:`Choose ${k} of ${n} different students for a team. Everyone has the same role.`,
+    books:`Choose ${k} of ${n} different books to borrow.`,
+    fruit:`Choose ${k} of ${n} different fruit types for a fruit bowl.`,
+    stickers:`Choose ${k} of ${n} different sticker designs for a set.`,
+    robot_parts:`Choose ${k} of ${n} different robot sensors for a kit.`,
+    games:`Choose ${k} of ${n} different games to bring on a trip.`,
+    flowers:`Choose ${k} of ${n} different flower types for a bouquet.`,
+    helpers:`Choose ${k} of ${n} volunteers to help. All helpers do the same job.`
+  };
+  const ordered=fallingCount(n,k),duplicates=factorial(k),answer=ordered/duplicates,slots=Array.from({length:k},(_,i)=>n-i);
+  return {
+    prompt:`${facts[context]} Choose each one at most once. The order of choosing does not matter. How many different groups can you choose?`,
+    answer,unit:'groups',context,
+    hints:[`The same people or items make the same group even if you list them in another order.`,`First count ordered choices: ${slots.join(' × ')}.`,`Each group appears ${duplicates} times in that ordered count. Divide by ${duplicates}.`],
+    steps:[`Counting in order gives ${slots.join(' × ')} = ${ordered}.`,`Each group of ${k} has ${k===2?'2 orders: AB and BA':`${k} × ${k-1} × 1 = ${duplicates} orders`}.`,`Count each group once: ${ordered} ÷ ${duplicates} = ${answer}.`],
+    math:{operation:'count_unordered',operands:[n,k]},
+    errorPatterns:[err(ordered,'ordered_instead','You counted different orders of the same group. Divide by the number of orders within each group.'),err(n**k,'allow_repeats','This count allows repeats and treats order as important. Here each choice is used once and order does not matter.'),err(n*k,'add_or_multiply_slots','List groups systematically, or count ordered choices and remove repeated orders.'),err(ordered/k,'divide_by_picks','For a group of three, there are six orders, not three. Remove every repeated order.')]
+  };
+}
+
+function countingRepeats(level,rng) {
+  const pick=picker(rng),context=pick(['letter_code','bead_row','robot_commands','color_flags','song_order']);
+  const n=pick(level===1?[3,4,5,6,7]:level===2?[3,4,5,6]:[4,5,6,7]);
+  const k=level+1,repeats=rng()<0.5;
+  const facts={
+    letter_code:`Make a ${k}-letter code using ${n} different letters.`,
+    bead_row:`Make a row of ${k} beads using ${n} available colors.`,
+    robot_commands:`Make a sequence of ${k} robot commands using ${n} available command types.`,
+    color_flags:`Make a row of ${k} flags using ${n} available colors.`,
+    song_order:`Make a list of ${k} songs in playing order using ${n} different songs.`
+  };
+  const repeatedNoun={letter_code:'letter',bead_row:'color',robot_commands:'command type',color_flags:'color',song_order:'song'}[context];
+  const slots=Array.from({length:k},(_,i)=>repeats?n:n-i),answer=slots.reduce((a,b)=>a*b,1);
+  return {
+    prompt:`${facts[context]} ${repeats?`Any ${repeatedNoun} may be used again.`:`Use each ${repeatedNoun} at most once.`} Order matters. How many sequences are possible?`,
+    answer,unit:'sequences',context,
+    hints:[repeats?'A used choice stays available for the next position.':'A used choice is no longer available for the next position.',repeats?`Every one of the ${k} positions has ${n} choices.`:`The positions have ${slots.join(', ')} choices.`,`${slots.join(' × ')} = ?`],
+    steps:[repeats?`Repeats are allowed, so the number of choices stays at ${n}.`:`Repeats are not allowed, so each used choice is removed.`,`${slots.join(' × ')} = ${answer}.`],
+    math:{operation:'count_codes',operands:[n,k],repeats},
+    errorPatterns:[err(repeats?fallingCount(n,k):n**k,repeats?'repetition_allowed':'repetition_forbidden',repeats?'Repeats are allowed. Keep the same number of choices at every position.':'Repeats are forbidden. Reduce the choices after every position.'),err(chooseCount(n,k),'unordered_instead','These are sequences. A different order is a different result.'),err(n*k,'add_or_multiply_slots','Multiply one choice count for each position. The number of positions is not a choice count.')]
+  };
+}
+
+function countingProbability(level,rng) {
+  const pick=picker(rng);
+  let prompt,context,total,favorable,model,event;
+  if(level===1) {
+    context=pick(['spinners','menu','two_bags','random_code']);
+    const a=pick([2,3,4]),b=pick([2,3,4,5,6]),x=pick(Array.from({length:a},(_,i)=>i+1)),y=pick(Array.from({length:b},(_,i)=>i+1));
+    const facts={
+      spinners:`Spin two fair spinners independently. The first has ${a} equal sections numbered 1 to ${a}; the second has ${b} equal sections numbered 1 to ${b}.`,
+      menu:`A computer independently picks one of ${a} numbered meals and one of ${b} numbered drinks. Each option in its group is equally likely.`,
+      two_bags:`Bag A has ${a} tiles numbered 1 to ${a}. Bag B has ${b} tiles numbered 1 to ${b}. Pick one tile independently and randomly from each bag; every tile in its bag is equally likely.`,
+      random_code:`A computer independently picks a first number from 1 to ${a} and a second number from 1 to ${b}. Each number in its range is equally likely.`
+    };
+    prompt=`${facts[context]} What is the probability of first getting ${x} and second getting ${y}? Give a fraction or decimal.`;
+    total=a*b;favorable=1;model={sizes:[a,b],withoutReplacement:false};event={kind:'exact_pair',values:[x,y]};
+  } else if(level===2) {
+    context=pick(['spinners','number_cards_replaced','random_numbers','two_tile_bags']);
+    const n=pick([3,4,5,6,7,8]),sameValues=rng()<0.4,target=pick(Array.from({length:2*n-3},(_,i)=>i+3));
+    const facts={
+      spinners:`Spin two fair spinners independently. Each has ${n} equal sections numbered 1 to ${n}.`,
+      number_cards_replaced:`There are ${n} cards numbered 1 to ${n}. Choose one uniformly at random, put it back, mix, and choose again uniformly.`,
+      random_numbers:`A computer picks a number from 1 to ${n} twice, independently. Every number is equally likely on each pick.`,
+      two_tile_bags:`Each of two bags contains tiles numbered 1 to ${n}. Pick one uniformly at random from each bag, independently.`
+    };
+    event=sameValues?{kind:'equal'}:{kind:'sum',value:target};
+    prompt=`${facts[context]} What is the probability that ${sameValues?'the two numbers are equal':`the two numbers add to ${target}`}? Give a fraction or decimal.`;
+    total=n*n;favorable=sameValues?n:Math.max(0,Math.min(n,target-1)-Math.max(1,target-n)+1);model={sizes:[n,n],withoutReplacement:false};
+  } else {
+    context=pick(['number_cards','numbered_tiles','robot_task_cards','bookmarks']);
+    const n=pick([4,5,6,7,8]),kind=pick(['both_odd','one_odd','same_parity','sum']),target=pick(Array.from({length:2*n-3},(_,i)=>i+3));
+    const noun={number_cards:'cards',numbered_tiles:'tiles',robot_task_cards:'robot task cards',bookmarks:'bookmarks'}[context];
+    const description={both_odd:'both numbers are odd',one_odd:'exactly one number is odd',same_parity:'both numbers are odd or both are even',sum:`the two numbers add to ${target}`}[kind];
+    prompt=`There are ${n} ${noun} numbered 1 to ${n}. Pick two in order, without putting the first one back. Each remaining item is equally likely on each pick. What is the probability that ${description}? Give a fraction or decimal.`;
+    const odd=Math.ceil(n/2),even=Math.floor(n/2);
+    favorable=kind==='both_odd'?odd*(odd-1):kind==='one_odd'?2*odd*even:kind==='same_parity'?odd*(odd-1)+even*(even-1):Math.max(0,Math.min(n,target-1)-Math.max(1,target-n)+1)-(target%2===0&&target/2<=n?1:0);
+    total=n*(n-1);model={sizes:[n,n],withoutReplacement:true};event=kind==='sum'?{kind,value:target}:{kind};
+  }
+  const answer=favorable/total,answerDisplay=fractionText(favorable,total);
+  let matchingExplanation;
+  if(event.kind==='exact_pair') matchingExplanation=`Only (${event.values.join(', ')}) matches: 1 outcome.`;
+  else if(event.kind==='equal') matchingExplanation=`The matching pairs are (1, 1) through (${model.sizes[0]}, ${model.sizes[0]}): ${favorable} outcomes.`;
+  else if(event.kind==='sum') {
+    const pairs=[];
+    for(let first=1;first<=model.sizes[0];first++) {
+      const second=event.value-first;
+      if(second>=1&&second<=model.sizes[1]&&(!model.withoutReplacement||first!==second)) pairs.push(`(${first}, ${second})`);
+    }
+    matchingExplanation=`Matching pairs: ${pairs.join(', ')}. That is ${favorable} outcomes.`;
+  } else {
+    const odd=Math.ceil(model.sizes[0]/2),even=Math.floor(model.sizes[0]/2);
+    matchingExplanation=event.kind==='both_odd'?`There are ${odd} odd numbers. Matching outcomes: ${odd} × ${odd-1} = ${favorable}.`:event.kind==='one_odd'?`Odd then even, or even then odd: ${odd} × ${even} + ${even} × ${odd} = ${favorable}.`:`Both odd, or both even: ${odd} × ${odd-1} + ${even} × ${even-1} = ${favorable}.`;
+  }
+  const countStep=model.withoutReplacement?`${model.sizes[0]} × ${model.sizes[0]-1}`:model.sizes.join(' × ');
+  return {
+    prompt,answer,answerDisplay,unit:'',context,
+    hints:[`Count all equally likely outcomes first. Keep the first and second choices in order.`,`There are ${total} ordered outcomes. Count the ones that meet the condition.`,`Probability = matching outcomes ÷ all outcomes = ${favorable}/${total}.`],
+    steps:[`All ordered outcomes: ${countStep} = ${total}.`,matchingExplanation,`Probability = ${favorable}/${total}${answerDisplay===`${favorable}/${total}`?'':` = ${answerDisplay}`}.`],
+    math:{operation:'count_probability',operands:[],model,event},
+    errorPatterns:[err(favorable,'favorable_count_only','That is a count of matching outcomes. Divide by the total number of equally likely outcomes.'),err(total/favorable,'reversed_probability','Put the matching outcomes over all outcomes. A probability cannot be greater than 1.'),err(1-answer,'complement_instead','That is the probability of the opposite event. Count outcomes that satisfy the stated condition.'),...(model.withoutReplacement?[err(favorable/(model.sizes[0]**2),'missing_no_replacement','The first item is not put back. There is one fewer choice on the second pick.')]:[])]
+  };
+}
+
+const FACTORIES={counting_choices:countingChoices,permutations,combinations,counting_repeats:countingRepeats,counting_probability:countingProbability,division,percent_decimal:percentDecimal,ratios,unit_rate:unitRate,proportional,percent_part:percentPart,percent_rate:percentRate,percent_whole:percentWhole,percent_change:percentChange,applications};
 
 export function makeQuestion(skillId,level=1,seed=1,format='numeric') {
   if(!IDS.has(skillId)) throw new RangeError(`Unknown skill: ${skillId}`);
@@ -362,9 +540,9 @@ export function makeQuestion(skillId,level=1,seed=1,format='numeric') {
   for(const value of [answer*2,answer/2,answer+1,answer+5,answer+10,0]) {
     if(errors.length>=3) break;
     const n=round(value,6);
-    if(n>=0&&!same(n,answer)&&!errors.some(x=>same(x.value,n))) errors.push(err(n,'recheck_steps','Recheck which amount is the whole, then choose the operation and calculate again.'));
+    if(n>=0&&!same(n,answer)&&!errors.some(x=>same(x.value,n))) errors.push(err(n,'recheck_steps',COUNTING_SKILL_IDS.includes(skillId)?'Check whether order matters and whether a choice can repeat. Then count each result once.':'Recheck which amount is the whole, then choose the operation and calculate again.'));
   }
-  const label=n=>raw.unit==='dollars'?`$${money(n)}`:raw.unit==='%'?`${fmt(n)}%`:fmt(n);
+  const label=n=>skillId==='counting_probability'?probabilityLabel(n):raw.unit==='dollars'?`$${money(n)}`:raw.unit==='%'?`${fmt(n)}%`:fmt(n);
   // Keep display labels distinct too: money values round to cents.
   const candidates=[{value:answer,label:label(answer),error:null}];
   for(const e of errors) {
@@ -414,7 +592,7 @@ export function gradeAnswer(q,text) {
   // number 0.25 is useful for percent answers, but not for a decimal answer.
   if(typeof text==='string') {
     if(text.includes('%') && q.unit!=='%') {
-      const expected=q.skill==='percent_decimal'?'a decimal':q.unit?`an answer in ${q.unit}`:'a number';
+      const expected=q.skill==='counting_probability'?'a fraction or decimal probability':q.skill==='percent_decimal'?'a decimal':q.unit?`an answer in ${q.unit}`:'a number';
       return {valid:false,correct:false,error:null,message:`Enter ${expected} without a percent sign.`};
     }
     if(text.includes('$') && !String(q.unit||'').includes('dollars')) {
@@ -426,7 +604,7 @@ export function gradeAnswer(q,text) {
   if(value===null) return {valid:false,correct:false,error:null,message:'Enter a number, decimal, or fraction, such as 25, 0.25, or 1/4.'};
   if(same(value,q.answer)) return {valid:true,correct:true,error:null,message:'Correct. Check that your answer fits the situation and units.'};
   const pattern=q.errorPatterns.find(e=>same(value,e.value));
-  return {valid:true,correct:false,error:pattern?.code||'calculation_or_setup',message:pattern?.message||'Let’s check the setup. What amount represents one whole, and what quantity are we finding?'};
+  return {valid:true,correct:false,error:pattern?.code||'calculation_or_setup',message:pattern?.message||(COUNTING_SKILL_IDS.includes(q.skill)?'Check whether order matters and whether choices can repeat. Count each outcome once.':'Let’s check the setup. What amount represents one whole, and what quantity are we finding?')};
 }
 
 function blankSkill() {
@@ -437,7 +615,7 @@ export function emptyProgress() {
   return {version:1,skills:Object.fromEntries(SKILLS.map(s=>[s.id,blankSkill()])),history:[],pending:null};
 }
 
-function normalizeProgress(input) {
+export function normalizeProgress(input) {
   const p=emptyProgress();
   if(!input||typeof input!=='object') return p;
   for(const s of SKILLS) {
@@ -445,6 +623,11 @@ function normalizeProgress(input) {
     if(!old||typeof old!=='object') continue;
     p.skills[s.id]={...blankSkill(),...old,recent:Array.isArray(old.recent)?old.recent.slice(-8).map(x=>({...x})):[]};
     p.skills[s.id].level=clampLevel(p.skills[s.id].level);
+    for(const key of ['attempts','independentCorrect','supportedCorrect','streak']) {
+      const value=Number(p.skills[s.id][key]);
+      p.skills[s.id][key]=Number.isFinite(value)?Math.max(0,Math.floor(value)):0;
+    }
+    p.skills[s.id].mastered=Boolean(p.skills[s.id].mastered);
   }
   p.history=Array.isArray(input.history)?input.history.slice(-1000).map(x=>({...x})):[];
   p.pending=input.pending&&IDS.has(input.pending.skill)?{...input.pending}:null;
@@ -469,6 +652,11 @@ function targetedRemediation(skill,error) {
   if(error==='part_vs_whole' && skill==='percent_whole') target='percent_part';
   if(error==='reverse_division') target=skill==='proportional'?'unit_rate':'division';
   if(error==='fraction_division') target='division';
+  if(['add_choices','missing_stage','unordered_instead'].includes(error) && COUNTING_SKILL_IDS.includes(skill)) target='counting_choices';
+  if(['ordered_instead','divide_by_picks'].includes(error) && skill==='combinations') target='permutations';
+  if(error==='repetition_allowed' && skill==='counting_repeats') target='counting_choices';
+  if(['repetition_forbidden','allow_repeats'].includes(error) && ['counting_repeats','combinations'].includes(skill)) target='permutations';
+  if(error==='missing_no_replacement' && skill==='counting_probability') target='counting_repeats';
   return target!==skill && isPrerequisite(skill,target)?target:null;
 }
 
@@ -503,7 +691,7 @@ export function recordAttempt(progress,q,{correct=false,hintUsed=false,error=nul
     } else {
       const prerequisites=SKILLS.find(x=>x.id===q.skill).prerequisites;
       const prerequisite=prerequisites.find(id=>!p.skills[id].mastered)||prerequisites.at(-1);
-      p.pending={skill:prerequisite||q.skill,level:1,reason:prerequisite?'A short foundation question will help with that step.':'Let’s use an equal-groups example with smaller numbers.'};
+      p.pending={skill:prerequisite||q.skill,level:1,reason:prerequisite?'A short foundation question will help with that step.':COUNTING_SKILL_IDS.includes(q.skill)?'Let’s list a few outcomes and count one choice at a time.':'Let’s use an equal-groups example with smaller numbers.'};
     }
   } else if(!correct || hintUsed) {
     p.pending={skill:q.skill,level:Math.max(1,Math.min(s.level,q.level)),reason:hintUsed?'Try the same idea with new numbers and less support.':'Try the same idea in a new situation.'};
@@ -512,24 +700,29 @@ export function recordAttempt(progress,q,{correct=false,hintUsed=false,error=nul
 }
 
 /** Select a skill/level only; the UI supplies a fresh seed to makeQuestion. */
-export function selectNext(progress,{focus,seed=1}={}) {
+export function selectNext(progress,{focus,seed=1,skillIds}={}) {
+  if(skillIds!==undefined && !Array.isArray(skillIds)) throw new TypeError('Practice scope must be an array of skill IDs.');
+  const scope=skillIds===undefined?SKILLS.map(s=>s.id):[...new Set(skillIds)];
+  if(!scope.length || scope.some(id=>!IDS.has(id))) throw new RangeError('Practice scope must contain known skills.');
+  const allowed=new Set(scope),available=SKILLS.filter(s=>allowed.has(s.id));
+  if(!allowed.has(focus)) focus=undefined;
   const p=normalizeProgress(progress),rng=random(`select:${seed}`);
   const result=(skill,level,reason)=>({skill,level:clampLevel(level),format:p.skills[skill].attempts%3===0?'choice':'numeric',reason});
-  if(p.pending && (!focus || p.pending.skill===focus || isPrerequisite(focus,p.pending.skill))) {
+  if(p.pending && allowed.has(p.pending.skill) && (!focus || p.pending.skill===focus || isPrerequisite(focus,p.pending.skill))) {
     return result(p.pending.skill,p.pending.level,p.pending.reason);
   }
   if(focus&&IDS.has(focus)) return result(focus,p.skills[focus].level,'Practice the skill you selected.');
   const now=Date.now();
-  const due=SKILLS.filter(s=>p.skills[s.id].mastered && now-p.skills[s.id].lastSeen>=DAY*(p.skills[s.id].level>=3?7:2));
+  const due=available.filter(s=>p.skills[s.id].mastered && now-p.skills[s.id].lastSeen>=DAY*(p.skills[s.id].level>=3?7:2));
   if(due.length && p.history.length%4===0) {
     due.sort((a,b)=>(p.skills[a.id].lastSeen||0)-(p.skills[b.id].lastSeen||0));
     return result(due[0].id,p.skills[due[0].id].level,'A short spaced review of a skill you have learned.');
   }
   // Begin with the learner's current focus; use prerequisites for remediation.
-  const preferred=['percent_part','percent_rate','percent_whole','percent_decimal','division','ratios','unit_rate','proportional','percent_change','applications'];
-  const unpracticed=preferred.find(id=>p.skills[id].attempts===0);
+  const preferred=['percent_part','percent_rate','percent_whole','percent_decimal','division','ratios','unit_rate','proportional','percent_change','applications',...COUNTING_SKILL_IDS];
+  const unpracticed=preferred.find(id=>allowed.has(id)&&p.skills[id].attempts===0);
   if(unpracticed) return result(unpracticed,1,'A quick check will help choose the next practice.');
-  const needs=SKILLS.filter(s=>!p.skills[s.id].mastered);
+  const needs=available.filter(s=>!p.skills[s.id].mastered);
   if(needs.length) {
     needs.sort((a,b)=>{
       const score=id=>{
@@ -542,6 +735,7 @@ export function selectNext(progress,{focus,seed=1}={}) {
     const selected=pool[Math.floor(rng()*pool.length)];
     return result(selected.id,p.skills[selected.id].level,'Extra practice for an idea that is still developing.');
   }
-  const oldest=SKILLS.slice().sort((a,b)=>(p.skills[a.id].lastSeen||0)-(p.skills[b.id].lastSeen||0))[0];
+  const oldest=available.slice().sort((a,b)=>(p.skills[a.id].lastSeen||0)-(p.skills[b.id].lastSeen||0))[0];
   return result(oldest.id,p.skills[oldest.id].level,'Mixed review to keep familiar ideas ready to use.');
 }
+

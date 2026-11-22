@@ -1,7 +1,31 @@
 import assert from 'node:assert/strict';
-import { SKILLS, makeQuestion, parseAnswer, gradeAnswer, emptyProgress, recordAttempt, selectNext } from './engine.js';
+import { SKILLS, COUNTING_SKILL_IDS, makeQuestion, parseAnswer, gradeAnswer, emptyProgress, normalizeProgress, recordAttempt, selectNext } from './engine.js';
 
 const rounded=(n,p)=>Math.round((n+Number.EPSILON)*10**p)/10**p;
+// Explicit sample-space enumeration is independent of the generator's
+// product, falling-factorial, and duplicate-order arithmetic.
+function tuples(sizes, noRepeat=false) {
+  const result=[];
+  function visit(prefix) {
+    if(prefix.length===sizes.length) { result.push(prefix);return; }
+    for(let value=1;value<=sizes[prefix.length];value++) {
+      if(!noRepeat||!prefix.includes(value)) visit([...prefix,value]);
+    }
+  }
+  visit([]);return result;
+}
+function matches(pair,event) {
+  const [x,y]=pair;
+  switch(event.kind) {
+    case 'exact_pair':return x===event.values[0]&&y===event.values[1];
+    case 'equal':return x===y;
+    case 'sum':return x+y===event.value;
+    case 'both_odd':return x%2===1&&y%2===1;
+    case 'one_odd':return (x+y)%2===1;
+    case 'same_parity':return x%2===y%2;
+    default:throw new Error(`Unknown event ${event.kind}`);
+  }
+}
 function independentlyCalculate(q) {
   const [a,b,c]=q.math.operands;
   const operation=q.math.operation;
@@ -19,6 +43,15 @@ function independentlyCalculate(q) {
     case 'discount_tax':{const sale=a-a*b/100;v=sale+sale*c/100;break;}
     case 'tax_tip':v=a+a*b/100+a*c/100;break;
     case 'successive_changes':{const increased=a+a*b/100;v=increased-increased*b/100;break;}
+    case 'count_product':v=tuples(q.math.operands).length;break;
+    case 'count_ordered':v=tuples(Array(b).fill(a),true).length;break;
+    case 'count_unordered':v=new Set(tuples(Array(b).fill(a),true).map(t=>t.sort((x,y)=>x-y).join(','))).size;break;
+    case 'count_codes':v=tuples(Array(b).fill(a),!q.math.repeats).length;break;
+    case 'count_probability':{
+      const outcomes=tuples(q.math.model.sizes,q.math.model.withoutReplacement);
+      v=outcomes.filter(t=>matches(t,q.math.event)).length/outcomes.length;
+      break;
+    }
     default:throw new Error(`Unknown operation ${operation}`);
   }
   return q.math.roundTo===undefined?v:rounded(v,q.math.roundTo);
@@ -43,6 +76,14 @@ for(const skill of SKILLS) for(let level=1;level<=3;level++) for(let seed=1;seed
     const displayed=parseAnswer(c.label);
     assert.ok(displayed!==null,`${q.id}: label parses`);
     assert.equal(gradeAnswer(q,displayed).correct,c.error===null,`${q.id}: label grade`);
+  }
+  if(COUNTING_SKILL_IDS.includes(skill.id)) {
+    assert.ok(q.answer>=0,`${q.id}: nonnegative count/probability`);
+    if(skill.id==='counting_probability') {
+      assert.ok(q.answer<=1,`${q.id}: probability at most one`);
+      assert.equal(gradeAnswer(q,q.answerDisplay).correct,true,`${q.id}: exact displayed fraction`);
+      assert.match(q.prompt,/fraction or decimal/,q.id);
+    } else assert.equal(Number.isInteger(q.answer),true,`${q.id}: whole-number count`);
   }
   generated++;
 }
@@ -143,4 +184,65 @@ assert.equal(selectNext(mastered).skill,'percent_part');
 assert.match(selectNext(mastered).reason,/spaced review/);
 assert.deepEqual(JSON.parse(JSON.stringify(mastered)),mastered,'progress is plain serializable data');
 assert.throws(()=>makeQuestion('unknown'),RangeError);
-console.log(`PASS: ${generated} generated questions; arithmetic, distractors, parsing and units, first attempts, real contexts, mastery, targeted remediation, and spaced review.`);
+// Old browser progress migrates by adding new skills, not discarding old work.
+const legacy=emptyProgress();
+legacy.skills.percent_part.attempts=7;
+legacy.skills.percent_part.independentCorrect=5;
+legacy.history=[{id:'legacy-record',skill:'percent_part',correct:true}];
+legacy.pending={skill:'percent_part',level:1,reason:'Continue the old topic.'};
+for(const id of COUNTING_SKILL_IDS) delete legacy.skills[id];
+const legacySnapshot=JSON.stringify(legacy),migrated=normalizeProgress(legacy);
+assert.equal(migrated.skills.percent_part.attempts,7);
+assert.equal(migrated.skills.percent_part.independentCorrect,5);
+assert.deepEqual(migrated.history,legacy.history);
+assert.deepEqual(migrated.pending,legacy.pending);
+for(const id of COUNTING_SKILL_IDS) assert.equal(migrated.skills[id].attempts,0);
+assert.equal(JSON.stringify(legacy),legacySnapshot,'migration does not mutate input');
+
+const chapter2={skillIds:COUNTING_SKILL_IDS};
+assert.equal(selectNext(emptyProgress(),chapter2).skill,'counting_choices');
+assert.equal(selectNext(migrated,chapter2).skill,'counting_choices','ignore an old-chapter pending question');
+assert.equal(selectNext(migrated,{...chapter2,focus:'percent_part'}).skill,'counting_choices','old focus cannot escape chapter scope');
+assert.throws(()=>selectNext(emptyProgress(),{skillIds:[]}),RangeError);
+assert.throws(()=>selectNext(emptyProgress(),{skillIds:['not-a-skill']}),RangeError);
+let scoped=emptyProgress();
+for(let step=0;step<100;step++) {
+  const next=selectNext(scoped,{...chapter2,seed:step});
+  assert.ok(COUNTING_SKILL_IDS.includes(next.skill),'all chapter 2 selection and remediation stays in chapter');
+  const item=makeQuestion(next.skill,next.level,`scope-${step}`,next.format);
+  scoped=recordAttempt(scoped,item,{correct:step%4!==0,hintUsed:step%7===0,error:'calculation_or_setup',timestamp:Date.now()});
+}
+const oldScope=SKILLS.filter(s=>!COUNTING_SKILL_IDS.includes(s.id)).map(s=>s.id);
+assert.ok(oldScope.includes(selectNext(scoped,{skillIds:oldScope}).skill),'old chapter remains scoped too');
+let dueChapter2=emptyProgress();
+dueChapter2.skills.combinations.mastered=true;
+dueChapter2.skills.combinations.lastSeen=Date.now()-10*86400000;
+dueChapter2.skills.percent_part.mastered=true;
+dueChapter2.skills.percent_part.lastSeen=Date.now()-20*86400000;
+assert.equal(selectNext(dueChapter2,chapter2).skill,'combinations','chapter review excludes older other-chapter skills');
+
+for(const [skill,error,target] of [
+  ['permutations','unordered_instead','counting_choices'],
+  ['combinations','ordered_instead','permutations'],
+  ['combinations','allow_repeats','permutations'],
+  ['counting_repeats','repetition_allowed','counting_choices'],
+  ['counting_repeats','repetition_forbidden','permutations'],
+  ['counting_probability','missing_no_replacement','counting_repeats']
+]) {
+  let learning=emptyProgress();
+  for(const seed of [801,802]) learning=recordAttempt(learning,makeQuestion(skill,2,seed),{correct:false,error});
+  assert.equal(selectNext(learning,{...chapter2,focus:skill}).skill,target,`${skill}: ${error} remediation`);
+}
+// Every new skill has real context variety and enough wording/number variants
+// for a focused forty-question printable sheet at each difficulty.
+for(const id of COUNTING_SKILL_IDS) for(const level of [1,2,3]) {
+  const prompts=new Set(),contexts=new Set();
+  for(let seed=0;seed<2500;seed++) {
+    const question=makeQuestion(id,level,`variety-${seed}`);
+    prompts.add(question.prompt);contexts.add(question.context);
+  }
+  assert.ok(contexts.size>=4,`${id}/${level}: actual contexts`);
+  assert.ok(prompts.size>=40,`${id}/${level}: at least forty distinct prompts (got ${prompts.size})`);
+}
+console.log(`PASS: ${generated} generated questions; arithmetic, distractors, parsing and units, first attempts, real contexts, mastery, targeted remediation, spaced review, independently enumerated counting outcomes, legacy migration, and chapter scope.`);
+

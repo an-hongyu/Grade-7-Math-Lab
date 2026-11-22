@@ -266,3 +266,12 @@ details p { margin: 13px 0; }
   .sheet-question, .sheet-answer { page-break-inside: avoid; }
   #print-view .worksheet .no-print { display: none !important; }
 }
+
+
+/* Chapter navigation stays compact; lessons remain one idea at a time. */
+.chapter-nav { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:18px; }
+.chapter-nav label { display:flex; flex-direction:column; gap:5px; }
+.chapter-nav select { max-width:100%; }
+.chapter-caption { margin:0 0 8px; color:var(--muted); font-size:.8rem; }
+.chapter-field { max-width:430px; margin-bottom:24px; }
+@media(max-width:560px) { .chapter-nav { grid-template-columns:1fr; gap:10px; } }

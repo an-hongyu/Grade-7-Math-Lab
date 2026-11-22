@@ -1,0 +1,38 @@
+/* Optional Chapter 2 models: small controls and fully visible outcome lists. */
+.counting-model { padding: 8px 0; }
+.counting-model h3 { margin-bottom: 14px; }
+.counting-model p { margin: 14px 0; }
+.cm-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 18px; margin: 18px 0; }
+.cm-controls label { display: flex; flex-direction: column; gap: 6px; font-size: .85rem; color: var(--muted); }
+.cm-controls select { min-height: 44px; max-width: 100%; padding: 8px 30px 8px 11px; background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 5px; }
+.cm-mode { display: flex; flex-wrap: wrap; gap: 8px; }
+.cm-mode button { min-height: 44px; padding: 9px 13px; border: 1px solid var(--line); border-radius: 5px; color: var(--ink); background: #fff; font-size: .85rem; }
+.cm-mode button[aria-pressed="true"] { background: var(--teal); color: #fff; border-color: var(--teal); }
+.cm-toggle { display: flex; align-items: center; gap: 10px; min-height: 44px; margin: 18px 0; font-size: .9rem; }
+.cm-toggle input { width: 20px; height: 20px; accent-color: var(--teal); }
+.cm-table-wrap { max-width: 100%; overflow-x: auto; }
+.cm-outfit-table { width: 100%; max-width: 560px; border-collapse: collapse; font-size: .88rem; }
+.cm-outfit-table caption { text-align: left; color: var(--muted); font-size: .85rem; margin-bottom: 10px; }
+.cm-outfit-table th, .cm-outfit-table td { text-align: center; padding: 10px 8px; border: 1px solid var(--line); }
+.cm-outfit-table th { font-weight: 600; background: var(--light); }
+.cm-outcomes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; max-width: 560px; padding: 0; list-style: none; margin: 20px 0; }
+.cm-outcomes > li { border: 1px solid var(--line); border-radius: 4px; padding: 12px 8px; text-align: center; font-size: .94rem; }
+.cm-roles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cm-roles small, .cm-roles strong { display: block; }
+.cm-roles small { font-size: .73rem; }
+.cm-codes { max-width: 360px; }
+.cm-codes span { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .12em; }
+.cm-coins { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 420px; }
+.cm-coins strong, .cm-coins span { display: block; }
+.cm-coins span { font-size: .75rem; color: var(--muted); margin-top: 4px; }
+.cm-coins .cm-matches { border: 2px solid var(--teal); padding: 11px 7px; background: var(--light); }
+.cm-count { color: var(--ink); font-size: 1.04rem; }
+.cm-count strong { color: var(--teal); }
+.cm-note { color: var(--muted); font-size: .86rem; }
+@media (max-width: 440px) {
+  .cm-controls { gap: 12px; }
+  .cm-mode button { padding: 9px 10px; }
+  .cm-outfit-table th, .cm-outfit-table td { padding: 8px 5px; font-size: .8rem; }
+  .cm-outcomes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cm-codes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}

@@ -1,6 +1,17 @@
-import { SKILLS, makeQuestion, emptyProgress, selectNext, recordAttempt, gradeAnswer } from './engine.js';
-import { LESSONS, ROADMAP, REFERENCES, PARENT_GUIDE } from './content.js';
-import { QUICK_LESSONS } from './quick-lessons.js';
+import { SKILLS, makeQuestion, emptyProgress, normalizeProgress, selectNext, recordAttempt, gradeAnswer } from './engine.js';
+import { LESSONS as RATIO_LESSONS, ROADMAP, REFERENCES, PARENT_GUIDE } from './content.js';
+import { QUICK_LESSONS as RATIO_QUICK } from './quick-lessons.js';
+import { COUNTING_LESSONS, COUNTING_QUICK, COUNTING_REFERENCES } from './counting-content.js';
+import { countingModelHtml, attachCountingModel } from './counting-model.js';
+
+const LESSONS = [...RATIO_LESSONS, ...COUNTING_LESSONS];
+const QUICK_LESSONS = {...RATIO_QUICK, ...COUNTING_QUICK};
+const CHAPTERS = [
+  {id:'ratios', number:1, title:'Ratios & percentages', start:'percent_part', skills:RATIO_LESSONS.map(l=>l.id), diagnostic:['division','percent_decimal','percent_part','percent_rate','percent_whole','ratios','unit_rate','percent_change']},
+  {id:'counting', number:2, title:'Permutations & combinations', start:'counting_choices', skills:COUNTING_LESSONS.map(l=>l.id), diagnostic:['counting_choices','permutations','combinations','counting_repeats','counting_probability','permutations','combinations','counting_repeats']}
+];
+const chapterById = id => CHAPTERS.find(c=>c.id===id) || CHAPTERS[0];
+const chapterForSkill = id => CHAPTERS.find(c=>c.skills.includes(id)) || CHAPTERS[0];
 
 const $ = selector => document.querySelector(selector);
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -20,6 +31,7 @@ let worksheetQuestions = [];
 let sheetSeed = Date.now();
 let questionCounter = 0;
 let activeLesson = null;
+let activeChapter = 'ratios';
 let lastLesson = 'percent_part';
 let currentView = 'learn';
 let poolMode = 'part';
@@ -29,8 +41,7 @@ let poolWhole = 800;
 try {
   const saved = JSON.parse(localStorage.getItem(STORAGE) || 'null');
   if (saved?.version === 1 && saved.skills && Array.isArray(saved.history)) {
-    const valid = SKILLS.every(s => saved.skills[s.id] && Number.isFinite(saved.skills[s.id].attempts) && Array.isArray(saved.skills[s.id].recent));
-    if (valid) progress = saved;
+    progress = normalizeProgress(saved);
   }
   chineseParents = localStorage.getItem(PREFERENCE) === 'true';
 } catch { $('#storage-warning').hidden = false; }
@@ -76,37 +87,44 @@ function proportionalModelHtml() {
 }
 
 function renderLearn() {
-  const lesson = LESSONS.find(l=>l.id===activeLesson) || LESSONS.find(l=>l.id==='percent_part');
+  const lesson = LESSONS.find(l=>l.id===activeLesson) || LESSONS.find(l=>l.id===chapterById(activeChapter).start);
+  const chapter = chapterForSkill(lesson.id);
+  const chapterLessons = LESSONS.filter(l=>chapter.skills.includes(l.id));
   const brief = QUICK_LESSONS[lesson.id];
-  const number = LESSONS.indexOf(lesson)+1;
+  const number = chapterLessons.indexOf(lesson)+1;
   const example = brief.example;
   const hasPool = ['percent_part','percent_rate','percent_whole','percent_decimal'].includes(lesson.id);
   $('#learn-view').innerHTML = `
-    <div class="book-nav"><label class="lesson-picker" for="lesson-picker">Lesson
-      <select id="lesson-picker">${LESSONS.map((l,i)=>`<option value="${l.id}"${l.id===lesson.id?' selected':''}>${i+1}. ${escapeHtml(QUICK_LESSONS[l.id].title)}</option>`).join('')}</select>
-    </label><span class="form-note">${number} of ${LESSONS.length}</span></div>
+    <div class="book-nav chapter-nav"><label class="lesson-picker" for="chapter-picker">Chapter
+      <select id="chapter-picker">${chapterOptions(chapter.id)}</select></label>
+      <label class="lesson-picker" for="lesson-picker">Lesson
+      <select id="lesson-picker">${chapterLessons.map((l,i)=>`<option value="${l.id}"${l.id===lesson.id?' selected':''}>${i+1}. ${escapeHtml(QUICK_LESSONS[l.id].title)}</option>`).join('')}</select></label></div>
     <section class="lesson-brief"><h1>${escapeHtml(brief.title)}</h1><p>${escapeHtml(brief.idea)}</p><p class="key-idea">${escapeHtml(brief.rule)}</p></section>
     <article class="lesson-example"><h2>Example</h2><p>${escapeHtml(example.question)}</p>
       ${hasPool?poolPictureHtml():''}
       <ol>${example.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(example.answer)}</p>
     </article>
-    <div class="lesson-actions"><button class="primary" type="button" id="lesson-practice">Practice this idea</button>${LESSONS[number]?`<a class="quiet-link" href="#learn/${LESSONS[number].id}">Next lesson</a>`:''}</div>
-    ${hasPool?`<details class="optional-detail"><summary>Try the pool model</summary>${explorerHtml()}</details>`:lesson.id==='proportional'?`<details class="optional-detail"><summary>See the graph</summary>${proportionalModelHtml()}</details>`:''}
+    <div class="lesson-actions"><button class="primary" type="button" id="lesson-practice">Practice this idea</button>${chapterLessons[number]?`<a class="quiet-link" href="#learn/${chapterLessons[number].id}">Next lesson</a>`:`<a class="quiet-link" href="#practice/${chapter.id}">Review this chapter</a>`}</div>
+    ${chapter.id==='counting'?`<details class="optional-detail"><summary>See the possibilities</summary><div id="counting-model">${countingModelHtml(lesson.id)}</div></details>`:hasPool?`<details class="optional-detail"><summary>Try the pool model</summary>${explorerHtml()}</details>`:lesson.id==='proportional'?`<details class="optional-detail"><summary>See the graph</summary>${proportionalModelHtml()}</details>`:''}
     <details class="optional-detail"><summary>More explanation</summary>
       <h2>Build the idea</h2>${lesson.explanation.map(text=>`<p>${escapeHtml(text)}</p>`).join('')}
       ${lesson.vocabulary?.length?`<div class="vocab">${lesson.vocabulary.map(v=>`<span><strong>${escapeHtml(v.term)}</strong>${escapeHtml(v.meaning)}</span>`).join('')}</div>`:''}
-      ${lesson.workedExamples.map((e,i)=>`<article class="example"><h3>Another example ${i+1}</h3><p>${escapeHtml(e.question)}</p><ol>${e.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(e.answer)}</p></article>`).join('')}
+      ${lesson.workedExamples.filter(e=>e.question!==brief.example.question).map((e,i)=>`<article class="example"><h3>Another example ${i+1}</h3><p>${escapeHtml(e.question)}</p><ol>${e.steps.map(step=>`<li>${escapeHtml(step)}</li>`).join('')}</ol><p class="answer-line">${escapeHtml(e.answer)}</p></article>`).join('')}
       <p class="watch-out"><strong>Check this</strong>${escapeHtml(lesson.watchOut)}</p>
-      <h3>Try it yourself</h3><p>${escapeHtml(lesson.check.prompt)}</p><details><summary>Show answer</summary><p>${escapeHtml(lesson.check.answer)}</p></details>
+      <h3>Try it yourself</h3><p>${escapeHtml(lesson.check.prompt)}</p><details><summary>Show answer</summary><p>${escapeHtml(lesson.check.answer)}</p></details>${lesson.extension?`<details><summary>Optional extension</summary><p>${escapeHtml(lesson.extension)}</p></details>`:''}
       ${chineseParents?`<div class="parent-note" lang="zh-Hans"><strong>家长讲解提示</strong><p>${escapeHtml(lesson.parentZh)}</p></div>`:''}
     </details>`;
+  $('#chapter-picker').addEventListener('change',event=>{location.hash=`learn/${chapterById(event.target.value).start}`;});
   $('#lesson-picker').addEventListener('change',event=>{location.hash=`learn/${event.target.value}`;});
-  $('#lesson-practice').addEventListener('click',()=>startPractice(false,lesson.id));
+  $('#lesson-practice').addEventListener('click',()=>startPractice(false,lesson.id,8,chapter.id));
   poolMode=lesson.id==='percent_rate'?'percent':lesson.id==='percent_whole'?'whole':'part';
   attachExplorer();
+  if(chapter.id==='counting') attachCountingModel($('#counting-model'),lesson.id);
 }
 
-function skillOptions(includeMixed=true) { return `${includeMixed?'<option value="">Let the practice adapt</option>':''}${SKILLS.map(s=>`<option value="${s.id}">${escapeHtml(s.title)}</option>`).join('')}`; }
+function chapterOptions(selected=activeChapter) { return CHAPTERS.map(c=>`<option value="${c.id}"${c.id===selected?' selected':''}>${c.number}. ${escapeHtml(c.title)}</option>`).join(''); }
+function chapterSkills(id=activeChapter) { return SKILLS.filter(s=>chapterById(id).skills.includes(s.id)); }
+function skillOptions(includeMixed=true,chapterId=activeChapter) { return `${includeMixed?'<option value="">Let the practice adapt</option>':''}${chapterSkills(chapterId).map(s=>`<option value="${s.id}">${escapeHtml(QUICK_LESSONS[s.id].title)}</option>`).join('')}`; }
 
 function renderPractice() {
   if (!practiceSession) return startPractice(false);
@@ -114,27 +132,33 @@ function renderPractice() {
 }
 
 function practiceOptionsHtml() {
-  return `<details class="setup-options"><summary>Change practice</summary><div class="fields"><label class="field">Topic<select id="practice-focus">${skillOptions()}</select></label><label class="field">Length<select id="practice-length"><option value="8">8 questions</option><option value="12">12 questions</option></select></label></div><div class="button-row"><button class="secondary" id="start-practice" type="button">Start new practice</button><button class="text-button" id="start-check" type="button">Take a starting check</button></div></details>`;
+  return `<details class="setup-options"><summary>Change practice</summary><div class="fields"><label class="field">Chapter<select id="practice-chapter">${chapterOptions(practiceSession?.chapter||activeChapter)}</select></label><label class="field">Topic<select id="practice-focus">${skillOptions(true,practiceSession?.chapter||activeChapter)}</select></label><label class="field">Length<select id="practice-length"><option value="8">8 questions</option><option value="12">12 questions</option></select></label></div><div class="button-row"><button class="secondary" id="start-practice" type="button">Start new practice</button><button class="text-button" id="start-check" type="button">Take a starting check</button></div></details>`;
 }
 
 function attachPracticeOptions() {
   $('#practice-focus').value=practiceSession?.focus||'';
   $('#practice-length').value=String(practiceSession?.length||8);
-  $('#start-practice').addEventListener('click',()=>startPractice(false,$('#practice-focus').value,Number($('#practice-length').value)));
-  $('#start-check').addEventListener('click',()=>startPractice(true));
+  $('#practice-chapter').addEventListener('change',()=>{$('#practice-focus').innerHTML=skillOptions(true,$('#practice-chapter').value);});
+  $('#start-practice').addEventListener('click',()=>startPractice(false,$('#practice-focus').value,Number($('#practice-length').value),$('#practice-chapter').value));
+  $('#start-check').addEventListener('click',()=>startPractice(true,'',8,$('#practice-chapter').value));
 }
 
-function startPractice(diagnostic=false,focus='',length=8) {
-  practiceSession={diagnostic,focus,length:diagnostic?8:length,index:0,answers:[],seed:Date.now()+questionCounter++,current:null,hints:0,graded:false,reason:'',seenPrompts:[]};
+function startPractice(diagnostic=false,focus='',length=8,chapterId=activeChapter) {
+  const chapter=chapterById(chapterId);
+  activeChapter=chapter.id;
+  if(!chapter.skills.includes(focus)) focus='';
+  practiceSession={diagnostic,focus,chapter:chapter.id,length:diagnostic?8:length,index:0,answers:[],seed:Date.now()+questionCounter++,current:null,hints:0,graded:false,reason:'',seenPrompts:[]};
   prepareQuestion();
-  if(location.hash==='#practice') renderPractice(); else location.hash='practice';
+  const target=`#practice/${chapter.id}`;
+  if(location.hash===target) renderPractice(); else location.hash=target;
 }
 
 function prepareQuestion() {
   const session=practiceSession;
   if(!session || session.index>=session.length) return;
-  const order=['division','percent_decimal','percent_part','percent_rate','percent_whole','ratios','unit_rate','percent_change'];
-  const next=session.diagnostic?{skill:order[session.index],level:1,format:session.index%3===1?'choice':'numeric',reason:'A starting check. Take your time and show your thinking on paper.'}:selectNext(progress,{focus:session.focus||undefined,seed:session.seed+session.index});
+  const chapter=chapterById(session.chapter);
+  const order=chapter.diagnostic;
+  const next=session.diagnostic?{skill:order[session.index],level:1,format:session.index%3===1?'choice':'numeric',reason:'A starting check. Take your time and show your thinking on paper.'}:selectNext(progress,{focus:session.focus||undefined,seed:session.seed+session.index,skillIds:chapter.skills});
     let candidate;
   for(let attempt=0;attempt<1000;attempt++) {
     candidate=makeQuestion(next.skill,next.level,`${session.seed}-${session.index}-${questionCounter++}`,next.format);
@@ -151,7 +175,7 @@ function renderQuestion() {
   if(s.index>=s.length || s.finished) return renderSessionSummary();
   const q=s.current;
   $('#practice-view').innerHTML=`<div class="practice-card">
-    <div class="practice-header"><span>${s.diagnostic?'Starting check · ':''}Question ${s.index+1} of ${s.length}</span><button class="text-button" id="finish-session" type="button">Finish for now</button></div>
+    <p class="chapter-caption">Chapter ${chapterById(s.chapter).number} · ${escapeHtml(chapterById(s.chapter).title)}</p><div class="practice-header"><span>${s.diagnostic?'Starting check · ':''}Question ${s.index+1} of ${s.length}</span><button class="text-button" id="finish-session" type="button">Finish for now</button></div>
     <div class="question-card"><h1 class="practice-title" id="question-prompt">${escapeHtml(q.prompt)}</h1>
       <form id="answer-form"><fieldset style="border:0;margin:0;padding:0"><legend class="visually-hidden">Your answer</legend>
       ${q.format==='choice'?`<div class="choice-list">${q.choices.map((c,i)=>`<label class="choice-label"><input type="radio" name="choice" value="${c.value}"${s.graded?' disabled':''}><span class="option">${String.fromCharCode(65+i)}</span><span>${escapeHtml(c.label)}${q.unit&&!['%','dollars'].includes(q.unit)?' '+escapeHtml(q.unit):''}</span></label>`).join('')}</div>`:`<div class="numeric-answer"><input id="numeric-input" name="answer" type="text" inputmode="decimal" autocomplete="off" aria-label="Your answer" aria-describedby="answer-format"${s.graded?' disabled':''}><label for="numeric-input">${escapeHtml(q.unit||'answer')}</label></div><p class="form-note" id="answer-format">${q.unit==='%'?'For 25%, type 25.':'Type a number or fraction, like 0.25 or 1/4.'}</p>`}
@@ -218,14 +242,15 @@ function renderSessionSummary() {
   const s=practiceSession;if(!s)return renderPractice();
   const independent=s.answers.filter(a=>a.correct&&!a.hintUsed).length;
   const supported=s.answers.filter(a=>a.correct&&a.hintUsed).length;
-  const next=selectNext(progress,{seed:Date.now()});
+  const next=selectNext(progress,{seed:Date.now(),skillIds:chapterById(s.chapter).skills});
   $('#practice-view').innerHTML=`<h1>${s.answers.length>=s.length?'Practice complete':'Finished for now'}</h1><p>${s.answers.length} questions answered.</p><p>${independent} correct on your own · ${supported} correct with a hint</p><div class="lesson-actions"><a class="primary button" href="#learn/${next.skill}">Learn the next idea</a><button class="text-button" id="again-practice" type="button">Practice again</button></div>${practiceOptionsHtml()}`;
   $('#again-practice').addEventListener('click',()=>startPractice(false));
   attachPracticeOptions();
 }
 
 function renderPrint() {
-  $('#print-view').innerHTML=`<h1>Print practice</h1><p>Choose a topic and make a practice sheet.</p><div class="button-row no-print"><a class="primary button" href="downloads/Grade-7-Math-Student-Workbook.pdf" target="_blank" rel="noopener">Student workbook PDF</a><a class="secondary button" href="downloads/Grade-7-Math-Answer-Guide.pdf" target="_blank" rel="noopener">Parent answer guide PDF</a></div><div class="card no-print" style="margin-top:25px"><h2>Make a practice sheet</h2><div class="fields"><label class="field">Skill<select id="sheet-skill"><option value="mixed">Mixed review</option>${skillOptions(false)}</select></label><label class="field">Difficulty<select id="sheet-level"><option value="1">Start simple</option><option value="2">Build confidence</option><option value="3">Stretch</option></select></label><label class="field">Questions<select id="sheet-count"><option value="8">8</option><option value="12" selected>12</option><option value="20">20</option><option value="40">40</option></select></label></div><label class="form-note"><input type="checkbox" id="include-answers"> Include the answer key when printing</label><div class="button-row"><button class="primary" type="button" id="generate-sheet">Generate new sheet</button><button class="secondary" type="button" id="print-sheet">Print this sheet</button></div></div><div class="worksheet" id="worksheet"></div>`;
+  $('#print-view').innerHTML=`<h1>Print practice</h1><p>Choose a topic and make a practice sheet.</p><label class="field chapter-field">Chapter<select id="sheet-chapter">${chapterOptions()}</select></label><div class="card no-print" style="margin-top:25px"><div class="fields"><label class="field">Skill<select id="sheet-skill"><option value="mixed">Chapter review</option>${skillOptions(false)}</select></label><label class="field">Difficulty<select id="sheet-level"><option value="1">Start simple</option><option value="2">Build confidence</option><option value="3">Stretch</option></select></label><label class="field">Questions<select id="sheet-count"><option value="8">8</option><option value="12" selected>12</option><option value="20">20</option><option value="40">40</option></select></label></div><label class="form-note"><input type="checkbox" id="include-answers"> Include the answer key when printing</label><div class="button-row"><button class="primary" type="button" id="generate-sheet">Generate new sheet</button><button class="secondary" type="button" id="print-sheet">Print this sheet</button></div></div><details class="no-print optional-detail"><summary>Chapter 1 PDF books</summary><p>These PDFs cover ratios and percentages. Use the generator above for Chapter 2.</p><div class="button-row"><a class="secondary button" href="downloads/Grade-7-Math-Student-Workbook.pdf" target="_blank" rel="noopener">Student workbook PDF</a><a class="quiet-link" href="downloads/Grade-7-Math-Answer-Guide.pdf" target="_blank" rel="noopener">Answer guide PDF</a></div></details><div class="worksheet" id="worksheet"></div>`;
+  $('#sheet-chapter').addEventListener('change',event=>{location.hash=`print/${event.target.value}`;});
   $('#generate-sheet').addEventListener('click',()=>{sheetSeed=Date.now();generateSheet();});
   $('#print-sheet').addEventListener('click',()=>window.print());
   $('#include-answers').addEventListener('change',paintSheet);
@@ -235,10 +260,11 @@ function renderPrint() {
 function generateSheet() {
   const skill=$('#sheet-skill').value,level=Number($('#sheet-level').value),count=Number($('#sheet-count').value);
   const seen=new Set();
+  const skills=chapterSkills();
   worksheetQuestions=Array.from({length:count},(_,i)=>{
     let candidate;
     for(let attempt=0;attempt<1000;attempt++) {
-      candidate=makeQuestion(skill==='mixed'?SKILLS[i%SKILLS.length].id:skill,level,`${sheetSeed}-${i}-${attempt}`,i%3===0?'choice':'numeric');
+      candidate=makeQuestion(skill==='mixed'?skills[i%skills.length].id:skill,level,`${sheetSeed}-${i}-${attempt}`,i%3===0?'choice':'numeric');
       if(!seen.has(candidate.prompt)) break;
     }
     seen.add(candidate.prompt);
@@ -249,12 +275,14 @@ function generateSheet() {
 
 function paintSheet() {
   const include=$('#include-answers').checked;
-  $('#worksheet').innerHTML=`<h2>Grade 7 Math Lab · Practice sheet</h2><p class="worksheet-meta">Name: ____________________ &nbsp; Date: __________ &nbsp; Sheet ${String(sheetSeed).slice(-6)}<br>Show the relationship, calculate, and check your answer. Use the units requested.</p>${worksheetQuestions.map((q,i)=>`<article class="sheet-question"><p><strong>${i+1}.</strong> ${escapeHtml(q.prompt)}</p>${q.format==='choice'?`<div class="sheet-choices">${q.choices.map((c,j)=>`<span>${String.fromCharCode(65+j)}. ${escapeHtml(c.label)}${q.unit&&!['%','dollars'].includes(q.unit)?' '+escapeHtml(q.unit):''}</span>`).join('')}</div>`:'<p>Answer: ____________________</p>'}<div class="work-space"></div></article>`).join('')}${include?`<section class="answer-key"><h2>Answer key</h2>${worksheetQuestions.map((q,i)=>`<div class="sheet-answer"><strong>${i+1}. ${pretty(q.answer)} ${escapeHtml(q.unit)}</strong><br>${q.steps.map(escapeHtml).join(' ')}</div>`).join('')}</section>`:''}`;
+  $('#worksheet').innerHTML=`<h2>Chapter ${chapterById(activeChapter).number} · ${escapeHtml(chapterById(activeChapter).title)}</h2><p class="worksheet-meta">Name: ____________________ &nbsp; Date: __________ &nbsp; Sheet ${String(sheetSeed).slice(-6)}<br>Show the relationship, calculate, and check your answer. Use the units requested.</p>${worksheetQuestions.map((q,i)=>`<article class="sheet-question"><p><strong>${i+1}.</strong> ${escapeHtml(q.prompt)}</p>${q.format==='choice'?`<div class="sheet-choices">${q.choices.map((c,j)=>`<span>${String.fromCharCode(65+j)}. ${escapeHtml(c.label)}${q.unit&&!['%','dollars'].includes(q.unit)?' '+escapeHtml(q.unit):''}</span>`).join('')}</div>`:'<p>Answer: ____________________</p>'}<div class="work-space"></div></article>`).join('')}${include?`<section class="answer-key"><h2>Answer key</h2>${worksheetQuestions.map((q,i)=>`<div class="sheet-answer"><strong>${i+1}. ${escapeHtml(q.answerDisplay ?? pretty(q.answer))} ${escapeHtml(q.unit)}</strong><br>${q.steps.map(escapeHtml).join(' ')}</div>`).join('')}</section>`:''}`;
 }
 
 function renderProgress() {
-  const attempts=SKILLS.reduce((a,s)=>a+progress.skills[s.id].attempts,0);
-  $('#progress-view').innerHTML=`<h1>My progress</h1><p>Choose an idea to practice next.</p><div class="card"><div class="section-heading"><h2>${attempts} questions explored</h2><p>First submitted answers only</p></div><div class="table-wrap"><table class="progress-table"><thead><tr><th>Idea</th><th>Independent</th><th>With hints</th><th>Next step</th></tr></thead><tbody>${SKILLS.map(skill=>{const p=progress.skills[skill.id];const recent=p.recent.slice(-5);const right=recent.filter(r=>r.independent).length;return `<tr><td><a href="#learn/${skill.id}">${escapeHtml(skill.title)}</a><div class="progress-track" aria-label="${right} independent correct answers in the last ${recent.length} questions"><span style="width:${right/5*100}%"></span></div></td><td>${p.independentCorrect} / ${p.attempts}</td><td>${p.supportedCorrect}</td><td><span class="status ${p.mastered?'ready':p.attempts?'building':''}">${p.mastered?'Ready for review':p.attempts?'Keep building':'Try this idea'}</span><br><small>Practice level ${p.level}</small></td></tr>`;}).join('')}</tbody></table></div><div class="button-row"><button class="secondary" id="export-progress" type="button">Export progress</button></div></div><details class="optional-detail"><summary>About this record</summary><p>A review signal needs 4 independent correct answers in the last 5 attempts, at least 2 contexts, and a typed answer. It is a practice rule, not a validated mastery score.</p><p>Your answers are stored on this browser and device. The book does not send them to GitHub or an AI service. Another device will have its own record. Clearing browser data may remove this record.</p><p class="form-note">Export creates a local JSON file for a parent to review or keep. The first edition does not import records or synchronize devices.</p><button class="text-button danger" id="reset-progress" type="button">Reset this browser's progress</button></details>`;
+  const skills=chapterSkills();
+  const attempts=skills.reduce((a,s)=>a+progress.skills[s.id].attempts,0);
+  $('#progress-view').innerHTML=`<h1>My progress</h1><label class="field chapter-field">Chapter<select id="record-chapter">${chapterOptions()}</select></label><div class="card"><div class="section-heading"><h2>${attempts} questions explored</h2><p>First submitted answers only</p></div><div class="table-wrap"><table class="progress-table"><thead><tr><th>Idea</th><th>Independent</th><th>With hints</th><th>Next step</th></tr></thead><tbody>${skills.map(skill=>{const p=progress.skills[skill.id];const recent=p.recent.slice(-5);const right=recent.filter(r=>r.independent).length;return `<tr><td><a href="#learn/${skill.id}">${escapeHtml(skill.title)}</a><div class="progress-track" aria-label="${right} independent correct answers in the last ${recent.length} questions"><span style="width:${right/5*100}%"></span></div></td><td>${p.independentCorrect} / ${p.attempts}</td><td>${p.supportedCorrect}</td><td><span class="status ${p.mastered?'ready':p.attempts?'building':''}">${p.mastered?'Ready for review':p.attempts?'Keep building':'Try this idea'}</span><br><small>Practice level ${p.level}</small></td></tr>`;}).join('')}</tbody></table></div><div class="button-row"><button class="secondary" id="export-progress" type="button">Export progress</button></div></div><details class="optional-detail"><summary>About this record</summary><p>A review signal needs 4 independent correct answers in the last 5 attempts, at least 2 contexts, and a typed answer. It is a practice rule, not a validated mastery score.</p><p>Your answers are stored on this browser and device. The book does not send them to GitHub or an AI service. Another device will have its own record. Clearing browser data may remove this record.</p><p class="form-note">Export creates a local JSON file for a parent to review or keep. The first edition does not import records or synchronize devices.</p><button class="text-button danger" id="reset-progress" type="button">Reset this browser's progress</button></details>`;
+  $('#record-chapter').addEventListener('change',event=>{location.hash=`progress/${event.target.value}`;});
   $('#export-progress').addEventListener('click',()=>{
     const blob=new Blob([JSON.stringify({book:'Grade 7 Math Lab',exportedAt:new Date().toISOString(),...progress},null,2)],{type:'application/json'});
     const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`math-lab-progress-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
@@ -263,29 +291,39 @@ function renderProgress() {
 }
 
 function renderParents() {
-  $('#parents-view').innerHTML=`<h1>For parents</h1><p>Start with one short lesson, then eight questions. Ask the learner to explain what represents 100%.</p>
-    <p class="form-note">The book opens at percentages. Use the lesson menu to choose any of the ten topics.</p>
-    ${chineseParents?'<div class="parent-note" lang="zh-Hans"><p>每次先看一个知识点，再做 8 道题。先问“谁是 100%”，再判断求部分、百分率还是整体。顶部的课程菜单可以选择其他知识点。</p></div>':''}
+  $('#parents-view').innerHTML=`<h1>For parents</h1><p>Start with one short lesson, then eight questions. For counting, ask whether changing the order changes the result.</p>
+    <p class="form-note">Choose Chapter 1 for ratios and percentages, or Chapter 2 for counting, permutations, and combinations.</p>
+    ${chineseParents?'<div class="parent-note" lang="zh-Hans"><p>每次先看一个知识点，再做 8 道题。第一章先问“谁是 100%”；第二章先问“换顺序算不算不同、能不能重复”。顶部的章节菜单可以切换。</p></div>':''}
     <div class="button-row"><button class="secondary" id="parent-start-check" type="button">Start an 8-question check</button><a class="quiet-link" href="#progress">View progress</a></div>
-    <details class="optional-detail"><summary>Helping with a lesson</summary>${PARENT_GUIDE.map(g=>`<h3>${escapeHtml(g.heading)}</h3><p>${escapeHtml(g.body)}</p>${chineseParents?`<p class="parent-note" lang="zh-Hans">${escapeHtml(g.zh)}</p>`:''}`).join('')}</details>
+    <details class="optional-detail"><summary>Helping with a lesson</summary><h3>Counting: name a different outcome</h3><p>Ask whether AB and BA are different. Named roles or positions make order matter; a group with no roles counts once. Check whether repeats are allowed, then list a small example before multiplying.</p>${PARENT_GUIDE.map(g=>`<h3>${escapeHtml(g.heading)}</h3><p>${escapeHtml(g.body)}</p>${chineseParents?`<p class="parent-note" lang="zh-Hans">${escapeHtml(g.zh)}</p>`:''}`).join('')}</details>
     <details class="optional-detail"><summary>How adaptive practice works</summary><p>Original question templates vary the numbers and situations. Code calculates the answers; no live AI model grades a child's response.</p><ol><li>An incorrect answer or a hint leads to more practice of that idea.</li><li>Repeated difficulty lowers the level or revisits a prerequisite.</li><li>Three independent correct answers in succession can raise the level.</li><li>A review signal requires 4 independent successes in the last 5 first attempts, at least 2 contexts, and a typed answer.</li><li>In adaptive mode, review is eligible after 2 days, or 7 days at the highest level, when the learner returns.</li></ol><p>These are practical teaching rules, not a validated mastery assessment. Ask the learner to explain before deciding why an answer was wrong.</p><p>Answers stay in the current browser. They are not uploaded to GitHub or synchronized across devices. Progress can be exported from the Progress page.</p></details>
-    <details class="optional-detail"><summary>Michigan standards and the fall plan</summary><p>Michigan defines annual expectations. Local schools choose their sequence. This suggested 16-week plan includes later topics beyond the current volume.</p><div class="table-wrap"><table class="roadmap-table"><thead><tr><th>Weeks</th><th>Focus</th><th>Standards</th><th>In this edition</th></tr></thead><tbody>${ROADMAP.map(r=>`<tr><td>${escapeHtml(r.weeks)}</td><td>${escapeHtml(r.focus)}</td><td>${escapeHtml(r.standards)}</td><td>${escapeHtml(r.status)}</td></tr>`).join('')}</tbody></table></div><p>This volume covers selected ratio and percentage skills. The full year also includes rational numbers, expressions and equations, geometry, statistics, and probability.</p></details>
-    <details class="optional-detail"><summary>Sources and teaching references</summary><p>The book's lessons, examples, question templates, and diagrams are original. These references informed scope and teaching design. Linked materials retain their own licenses.</p>${REFERENCES.concat(TEACHING_REFERENCES).map(r=>`<article class="resource"><h3><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a></h3><p>${escapeHtml(r.use)}</p><small>${escapeHtml(r.license)}</small></article>`).join('')}<p class="form-note">Reviewed November 19, 2026. External publishers do not endorse this book.</p></details>`;
+    <details class="optional-detail"><summary>Michigan standards and the fall plan</summary><p>Michigan defines annual expectations. Local schools choose their sequence. This suggested 16-week plan includes later topics beyond the current volume.</p><div class="table-wrap"><table class="roadmap-table"><thead><tr><th>Weeks</th><th>Focus</th><th>Standards</th><th>In this edition</th></tr></thead><tbody>${ROADMAP.map(r=>`<tr><td>${escapeHtml(r.weeks)}</td><td>${escapeHtml(r.focus)}</td><td>${escapeHtml(r.standards)}</td><td>${escapeHtml(r.status)}</td></tr>`).join('')}</tbody></table></div><p>Chapter 1 covers selected ratio and percentage skills. Chapter 2 develops organized counting and simple compound probability (7.SP.C.8), with introductory permutations and combinations as supporting extensions. Formal permutation and combination formulas appear in the high-school standard S-CP.9(+); they are not required for this chapter. These two chapters do not cover the whole Grade 7 year.</p></details>
+    <details class="optional-detail"><summary>Sources and teaching references</summary><p>The book's lessons, examples, question templates, and diagrams are original. These references informed scope and teaching design. Linked materials retain their own licenses.</p>${REFERENCES.concat(COUNTING_REFERENCES,TEACHING_REFERENCES).map(r=>`<article class="resource"><h3><a href="${escapeHtml(r.url)}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a></h3><p>${escapeHtml(r.use)}</p><small>${escapeHtml(r.license)}</small></article>`).join('')}<p class="form-note">Chapter 2 added November 22, 2026. External publishers do not endorse this book.</p></details>`;
   $('#parent-start-check').addEventListener('click',()=>startPractice(true));
 }
 
 function route() {
-  const [candidate,lessonId]=(location.hash.slice(1)||'learn').split('/');
+  const [candidate,item]=(location.hash.slice(1)||'learn').split('/');
   currentView=['learn','practice','print','progress','parents'].includes(candidate)?candidate:'learn';
-  activeLesson=currentView==='learn'?(LESSONS.some(l=>l.id===lessonId)?lessonId:lastLesson):null;
-  if(activeLesson) lastLesson=activeLesson;
+  activeLesson=currentView==='learn'?(LESSONS.some(l=>l.id===item)?item:lastLesson):null;
+  if(activeLesson) {
+    lastLesson=activeLesson;
+    activeChapter=chapterForSkill(activeLesson).id;
+  } else if(CHAPTERS.some(c=>c.id===item)) activeChapter=item;
+  if(currentView==='practice' && practiceSession && practiceSession.chapter!==activeChapter) practiceSession=null;
   document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!==`${currentView}-view`);
-  document.querySelectorAll('[data-tab]').forEach(a=>{a.classList.toggle('active',a.dataset.tab===currentView);if(a.dataset.tab===currentView)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
+  const learnTarget=chapterForSkill(lastLesson).id===activeChapter?lastLesson:chapterById(activeChapter).start;
+  document.querySelectorAll('[data-tab]').forEach(a=>{
+    a.classList.toggle('active',a.dataset.tab===currentView);
+    if(a.dataset.tab===currentView)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');
+    a.setAttribute('href',a.dataset.tab==='learn'?`#learn/${learnTarget}`:a.dataset.tab==='parents'?'#parents':`#${a.dataset.tab}/${activeChapter}`);
+  });
+  $('.brand').setAttribute('href',`#learn/${learnTarget}`);
   ({learn:renderLearn,practice:renderPractice,print:renderPrint,progress:renderProgress,parents:renderParents})[currentView]();
   $('#parent-language').hidden=currentView!=='parents';
   $('#parent-language').setAttribute('aria-pressed',String(chineseParents));
   $('#parent-language').textContent=chineseParents?'中文提示已开':'家长中文';
-  document.title=`${activeLesson?LESSONS.find(l=>l.id===activeLesson).title:({learn:'Ratios, Rates & Percentages',practice:'Adaptive Practice',print:'Printable Workbook',progress:'My Progress',parents:'Parent Guide'})[currentView]} · Grade 7 Math Lab`;
+  document.title=`${activeLesson?QUICK_LESSONS[activeLesson].title:({learn:chapterById(activeChapter).title,practice:'Practice: '+chapterById(activeChapter).title,print:'Printable Workbook',progress:'My Progress',parents:'Parent Guide'})[currentView]} · Grade 7 Math Lab`;
   window.scrollTo({top:0,behavior:'instant'});
 }
 
@@ -301,3 +339,4 @@ $('.skip-link').addEventListener('click',event=>{
 });
 window.addEventListener('hashchange',route);
 route();
+

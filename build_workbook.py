@@ -56,7 +56,10 @@ def load_data():
 import fs from "node:fs";
 const load=async path=>import("data:text/javascript;base64,"+fs.readFileSync(path).toString("base64"));
 const c=await load("content.js");const e=await load("engine.js");const questions=[];const seen=new Set();
-for(const skill of e.SKILLS){for(let level=1;level<=3;level++){for(let j=0;j<4;j++){
+// Book-v1 is the original ten-lesson print set, even as the online engine grows.
+const printSkills=c.LESSONS.map(lesson=>e.SKILLS.find(skill=>skill.id===lesson.id));
+if(printSkills.length!==10||printSkills.some(skill=>!skill))throw Error("Book-v1 requires its original ten lesson skills");
+for(const skill of printSkills){for(let level=1;level<=3;level++){for(let j=0;j<4;j++){
  let q;let attempt=0;do{q=e.makeQuestion(skill.id,level,`book-v1-${skill.id}-${level}-${j}-${attempt++}`,j%2?"choice":"numeric");}while(seen.has(q.prompt)&&attempt<100);
  if(seen.has(q.prompt))throw Error("Could not produce a unique question");seen.add(q.prompt);
  questions.push({...q,bookId:`P${String(questions.length+1).padStart(3,"0")}`});
@@ -623,3 +626,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -89,3 +89,13 @@ IES/WWC, Improving Mathematical Problem Solving in Grades 4 Through 8: https://i
 IES, Organizing Instruction and Study to Improve Student Learning: https://ies.ed.gov/ncee/WWC/Docs/PracticeGuide/20072004.pdf
 
 These references support instructional principles such as visual representations, reflection, worked examples, feedback, and spacing. They do not establish the effectiveness of this particular application or its readiness threshold.
+
+
+## Chapter 2: counting, permutations, and combinations
+
+Added November 22, 2026. All explanations, examples, question templates, and interactive enumerations are original.
+
+- Michigan official standards: https://www.michigan.gov/-/media/Project/Websites/mde/Literacy/Content-Standards/Math_Standards.pdf . Grade 7 standard 7.SP.C.8 addresses compound events and sample spaces represented by lists, tables, and tree diagrams. Explicit use of permutations and combinations appears in high-school S-CP.9(+). This chapter teaches small organized counts first; its introductory permutation/combination ideas are supporting extensions, not a claim that formal formulas are required in Grade 7.
+- Illustrative Mathematics, classic Grade 7 Unit 8, Probability and Sampling: https://im.kendallhunt.com/MS/teachers/2/8/index.html . Reference for enumerating sample spaces and connecting counts to compound-event probability. The classic edition carries CC BY 4.0 with trademark and asset exceptions; no publisher problems or artwork are copied here.
+
+Every probability problem explicitly defines fair, independent or uniformly selected outcomes as appropriate. Ordered outcomes and unordered groups are kept distinct; repetition permissions are stated in the problem. The model and question-bank checks independently enumerate small outcome spaces.
